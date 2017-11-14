@@ -3,5 +3,5 @@
 *.dylib
 *.o
 *.dSYM
-testCIEDE2000
-
+build/
+.vscode/
