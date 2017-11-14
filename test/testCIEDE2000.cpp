@@ -4,6 +4,7 @@
  * See LICENSE for details.
  */
 
+#include <cmath>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -23,11 +24,38 @@ int main(int argc, char *argv[]) { return (testcolor()); }
 
 int testcolor() {
   color::LAB lab1, lab2;
-  double expectedResult, myResult;
+  color::RGB rgb1, rgb_expected;
   unsigned int line = 1;
+  std::vector<bool> passFail;
+
+  lab1 = {100, 0, 0};
+  rgb1 = color::LABtoRGB(lab1);
+  rgb_expected = {1, 1, 1};
+
+  passFail.push_back(std::abs(rgb1.r - rgb_expected.r) < 1e-3);
+  std::cout << line << ": " << rgb1.r << " vs " << rgb_expected.r << '\t'
+            << (passFail[line - 1] ? "PASS" : "FAIL") << std::endl;
+  ++line;
+
+  passFail.push_back(std::abs(rgb1.g - rgb_expected.g) < 1e-3);
+  std::cout << line << ": " << rgb1.g << " vs " << rgb_expected.g << '\t'
+            << (passFail[line - 1] ? "PASS" : "FAIL") << std::endl;
+  ++line;
+
+  passFail.push_back(std::abs(rgb1.b - rgb_expected.b) < 1e-3);
+  std::cout << line << ": " << rgb1.b << " vs " << rgb_expected.b << '\t'
+            << (passFail[line - 1] ? "PASS" : "FAIL") << std::endl;
+  ++line;
+
+  std::cout << color::LABtoRGB(color::LAB{50, 0, 0}) << std::endl;
+  std::cout << color::LABtoRGB(color::LAB{50, 1000, 0}) << std::endl;
+  std::cout << color::LABtoRGB(color::LAB{50, -1000, 0}) << std::endl;
+  std::cout << color::LABtoRGB(color::LAB{50, 0, 1000}) << std::endl;
+  std::cout << color::LABtoRGB(color::LAB{50, 0, -1000}) << std::endl;
+
+  double expectedResult, myResult;
   char myBuffer[64], expectedBuffer[64];
   std::string myStr, expectedStr;
-  std::vector<bool> passFail;
 
   lab1 = {50.0000, 2.6772, -79.7751};
   lab2 = {50.0000, 0.0000, -82.7485};

@@ -13,22 +13,13 @@
 #define M_PI 3.14159265358979323846264338327950288 /* pi */
 #endif
 
-/** Namespace containing all necessary objects and methods for color */
 namespace color {
-/***********************************************************************
- * Types.
- **********************************************************************/
-
 /** A color in CIELAB colorspace */
 struct LAB {
-  /** Lightness */
   double l;
-  /** Color-opponent a dimension */
   double a;
-  /** Color-opponent b dimension */
   double b;
 };
-/** Convenience definition for struct LAB */
 using LAB = struct LAB;
 
 /** A color in CIEXYZ colorspace */
@@ -37,7 +28,6 @@ struct XYZ {
   double y;
   double z;
 };
-/** Convenience definition for struct XYZ */
 using XYZ = struct XYZ;
 
 /** A color in CIERGB colorspace */
@@ -46,12 +36,7 @@ struct RGB {
   double g;
   double b;
 };
-/** Convenience definition for struct RGB */
 using RGB = struct RGB;
-
-/***********************************************************************
- * Operations.
- **********************************************************************/
 
 /**
  * @brief
@@ -72,51 +57,19 @@ using RGB = struct RGB;
  */
 double CIEDE2000(const LAB &lab1, const LAB &lab2);
 
-/***********************************************************************
- * Conversions.
- **********************************************************************/
-
-/**
- * @brief
- * Convert degrees to radians.
- *
- * @param deg
- * Angle in degrees.
- *
- * @return
- * deg in radians.
- */
 constexpr double deg2Rad(const double deg);
-
-/**
- * @brief
- * Convert radians to degrees.
- *
- * @param rad
- * Angle in radians.
- *
- * @return
- * rad in degrees.
- */
 constexpr double rad2Deg(const double rad);
 
-/*******************************************************************************
- * Conversions.
- ******************************************************************************/
+RGB XYZtoRGB(const XYZ &xyz);
+XYZ LABtoXYZ(const LAB &lab);
+RGB LABtoRGB(const LAB &lab);
+
+bool offRGB(const LAB &lab);
 
 } // namespace color
-/**
- * @brief
- * LAB output stream operator.
- *
- * @param s
- * Output stream.
- * @param labColor
- * Color to output.
- *
- * @return
- * s with labColor appended.
- */
+
 std::ostream &operator<<(std::ostream &s, const color::LAB &labColor);
+std::ostream &operator<<(std::ostream &s, const color::XYZ &labColor);
+std::ostream &operator<<(std::ostream &s, const color::RGB &labColor);
 
 #endif /* GPF_COLOR_H_ */

@@ -6,8 +6,8 @@ project(color)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-add_library(CIEDE2000 SHARED src/CIEDE2000.cpp)
-target_include_directories(CIEDE2000 PUBLIC include)
+add_library(color SHARED src/color.cpp src/conversion.cpp src/CIEDE2000.cpp)
+target_include_directories(color PUBLIC include)
 
 add_executable(testCIEDE2000 test/testCIEDE2000.cpp)
-target_link_libraries(testCIEDE2000 CIEDE2000)
+target_link_libraries(testCIEDE2000 color)

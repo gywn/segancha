@@ -148,12 +148,3 @@ double color::CIEDE2000(const LAB &lab1, const LAB &lab2) {
 
   return (deltaE);
 }
-
-/*******************************************************************************
- * Operators.
- ******************************************************************************/
-
-std::ostream &operator<<(std::ostream &s, const color::LAB &labColor) {
-  return (s << "CIELAB(" << labColor.l << "," << labColor.a << "," << labColor.b
-            << ")");
-}
