@@ -9,10 +9,6 @@
 
 #include <ostream>
 
-#ifndef M_PI
-#define M_PI 3.14159265358979323846264338327950288 /* pi */
-#endif
-
 namespace color {
 /** A color in CIELAB colorspace */
 struct LAB {
