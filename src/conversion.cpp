@@ -12,9 +12,12 @@ RGB XYZtoRGB(const XYZ &xyz) {
   double g = xyz.x * A21 + xyz.y * A22 + xyz.z * A23;
   double b = xyz.x * A31 + xyz.y * A32 + xyz.z * A33;
 
-  r = ((abs(r) > 0.0031308) ? sgn(r) * (1.055 * pow(abs(r), 1 / 2.4) - 0.055) : (12.92 * r));
-  g = ((abs(g) > 0.0031308) ? sgn(g) * (1.055 * pow(abs(g), 1 / 2.4) - 0.055) : (12.92 * g));
-  b = ((abs(b) > 0.0031308) ? sgn(b) * (1.055 * pow(abs(b), 1 / 2.4) - 0.055) : (12.92 * b));
+  r = ((abs(r) > 0.0031308) ? sgn(r) * (1.055 * pow(abs(r), 1 / 2.4) - 0.055)
+                            : (12.92 * r));
+  g = ((abs(g) > 0.0031308) ? sgn(g) * (1.055 * pow(abs(g), 1 / 2.4) - 0.055)
+                            : (12.92 * g));
+  b = ((abs(b) > 0.0031308) ? sgn(b) * (1.055 * pow(abs(b), 1 / 2.4) - 0.055)
+                            : (12.92 * b));
 
   return RGB{r, g, b};
 }
