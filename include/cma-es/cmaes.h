@@ -825,7 +825,7 @@ public:
     delete[] B;
     delete[] index;
     delete[] publicFitness;
-    delete[]-- functionValues;
+    delete[] functionValues;
     delete[]-- funcValueHistory;
   }
 
@@ -887,9 +887,9 @@ public:
     C = new T *[params.N];
     B = new T *[params.N];
     publicFitness = new T[params.lambda];
-    functionValues = new T[params.lambda + 1];
-    functionValues[0] = params.lambda;
-    ++functionValues;
+    functionValues = new T[params.lambda];
+    // functionValues[0] = params.lambda;
+    // ++functionValues;
     const int historySize = 10 + (int)ceil(3. * 10. * params.N / params.lambda);
     funcValueHistory = new T[historySize + 1];
     funcValueHistory[0] = (T)historySize;
