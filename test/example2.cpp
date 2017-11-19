@@ -13,31 +13,34 @@
 #include <string.h>
 
 double **OrthogonalBasis(int DIM);
-double f_rosenbrock(double const *x);
-double f_rand(double const *x);
-double f_constant(double const *x);
-double f_kugelmin1(double const *x);
-double f_sphere(double const *x);
-double f_stepsphere(double const *x);
-double f_cigar(double const *x);
-double f_cigtab(double const *x);
-double f_tablet(double const *x);
-double f_elli(double const *x);
-double f_ellirot(double const *x);
-double f_elli100(double const *x);
-double f_ellinumtest(double const *x);
-double f_parabR(double const *x);
-double f_sharpR(double const *x);
-double f_diffpow(double const *x);
-double f_diffpowrot(double const *x);
-double f_gleichsys5(double const *x);
+double f_rosenbrock(const std::vector<double> &x);
+double f_rand(const std::vector<double> &x);
+double f_constant(const std::vector<double> &x);
+double f_kugelmin1(const std::vector<double> &x);
+double f_sphere(const std::vector<double> &x);
+double f_stepsphere(const std::vector<double> &x);
+double f_cigar(const std::vector<double> &x);
+double f_cigtab(const std::vector<double> &x);
+double f_tablet(const std::vector<double> &x);
+double f_elli(const std::vector<double> &x);
+double f_ellirot(const std::vector<double> &x);
+double f_elli100(const std::vector<double> &x);
+double f_ellinumtest(const std::vector<double> &x);
+double f_parabR(const std::vector<double> &x);
+double f_sharpR(const std::vector<double> &x);
+double f_diffpow(const std::vector<double> &x);
+double f_diffpowrot(const std::vector<double> &x);
+double f_gleichsys5(const std::vector<double> &x);
 
-double *optimize(double (*pFun)(double const *), int number_of_restarts,
+double *optimize(double (*pFun)(const std::vector<double> &),
+                 int number_of_restarts,
                  double increment_factor_for_population_size);
 
 int main(int, char **) {
-  typedef double (*pfun_t)(double const *);
-  pfun_t rgpFun[99]; // array (range) of pointer to objective function
+  typedef double (*pfun_t)(const std::vector<double> &);
+  size_t maxTest = 99;
+  std::vector<pfun_t> rgpFun(
+      maxTest); // vector (range) of pointer to objective function
   double incpopsize = 2;
   double *x;
 
@@ -61,11 +64,15 @@ int main(int, char **) {
   rgpFun[22] = f_ellirot;
   rgpFun[23] = f_diffpowrot;
 
-  int nb = 5;
   int nbrestarts = 0;
-
-  // Optimize function
-  x = optimize(rgpFun[nb], nbrestarts, incpopsize);
+  for (size_t nb = 0; nb < maxTest; ++nb) {
+    // Optimize function
+    pfun_t f = rgpFun[nb];
+    if (f == nullptr) {
+      continue;
+    }
+    x = optimize(f, nbrestarts, incpopsize);
+  }
 
   // here we could utilize the solution x, and finally free memory
   delete[] x;
@@ -77,11 +84,11 @@ int main(int, char **) {
  * Somewhat extended interface for optimizing pFun with CMAES implementing a
  * restart procedure with increasing population size.
  */
-double *optimize(double (*pFun)(double const *), int nrestarts,
+double *optimize(double (*pFun)(const std::vector<double> &), int nrestarts,
                  double incpopsize) {
-  CMAES<double> evo;  // the optimizer
-  double *const *pop; // sampled population
-  double *fitvals;    // objective function values of sampled population
+  CMAES<double> evo;               // the optimizer
+  Individual<double, double> *pop; // sampled population
+  double *fitvals; // objective function values of sampled population
   double fbestever = 0, *xbestever = NULL; // store best solution
   double fmean;
   int irun,
@@ -100,7 +107,7 @@ double *optimize(double (*pFun)(double const *), int nrestarts,
     double stddev[dim];
     for (int i = 0; i < dim; i++)
       stddev[i] = 0.3;
-    Parameters<double> parameters;
+    Parameters<double, double> parameters;
     // You can resume a previous run by specifying a file that contains the
     // resume data:
     // parameters.resumefile = "resumeevo2.dat";
@@ -128,7 +135,7 @@ double *optimize(double (*pFun)(double const *), int nrestarts,
        */
 
       // Compute fitness value for each candidate solution
-      for (int i = 0; i < evo.get(CMAES<double>::PopSize); ++i) {
+      for (int i = 0; i < evo.get(CMAES<double, double>::PopSize); ++i) {
         /* You may resample the solution i until it lies within the
            feasible domain here, e.g. until it satisfies given
            box constraints (variable boundaries). The function
@@ -143,7 +150,7 @@ double *optimize(double (*pFun)(double const *), int nrestarts,
         /* while (!is_feasible(pop[i]))
              evo.reSampleSingle(i);
         */
-        fitvals[i] = (*pFun)(pop[i]);
+        fitvals[i] = (*pFun)(pop[i].x);
       }
 
       // update search distribution
@@ -152,36 +159,41 @@ double *optimize(double (*pFun)(double const *), int nrestarts,
       fflush(stdout);
     }
 
-    lambda = (int)(incpopsize *
-                   evo.get(CMAES<double>::Lambda)); // needed for the restart
-    countevals = (int)evo.get(CMAES<double>::Eval); // dito
+    lambda =
+        (int)(incpopsize *
+              evo.get(CMAES<double, double>::Lambda)); // needed for the restart
+    countevals = (int)evo.get(CMAES<double, double>::Eval); // dito
 
     // print some "final" output
-    std::cout << (int)evo.get(CMAES<double>::Generation) << " generations, "
-              << (int)evo.get(CMAES<double>::Eval) << " fevals ("
-              << evo.eigenTimings.totaltime
-              << " sec): f(x)=" << evo.get(CMAES<double>::Fitness) << std::endl
+    std::cout << (int)evo.get(CMAES<double, double>::Generation)
+              << " generations, " << (int)evo.get(CMAES<double, double>::Eval)
+              << " fevals (" << evo.eigenTimings.totaltime
+              << " sec): f(x)=" << evo.getValue(CMAES<double, double>::Fitness)
+              << std::endl
               << "  (axis-ratio="
-              << evo.get(CMAES<double>::MaxAxisLength) /
-                     evo.get(CMAES<double>::MinAxisLength)
-              << ", max/min-stddev=" << evo.get(CMAES<double>::MaxStdDev) << "/"
-              << evo.get(CMAES<double>::MinStdDev) << ")" << std::endl
+              << evo.get(CMAES<double, double>::MaxAxisLength) /
+                     evo.get(CMAES<double, double>::MinAxisLength)
+              << ", max/min-stddev="
+              << evo.get(CMAES<double, double>::MaxStdDev) << "/"
+              << evo.get(CMAES<double, double>::MinStdDev) << ")" << std::endl
               << "Stop (run " << (irun + 1) << "):" << std::endl
               << evo.getStopMessage();
 
     // write resume data
-    evo.writeToFile(CMAES<double>::WKResume, "resumeevo2.dat");
+    evo.writeToFile(CMAES<double, double>::WKResume, "resumeevo2.dat");
 
     // keep best ever solution
-    if (irun == 0 || evo.get(CMAES<double>::FBestEver) < fbestever) {
-      fbestever = evo.get(CMAES<double>::FBestEver);
-      xbestever = evo.getInto(CMAES<double>::XBestEver,
+    if (irun == 0 ||
+        evo.getValue(CMAES<double, double>::FBestEver) < fbestever) {
+      fbestever = evo.getValue(CMAES<double, double>::FBestEver);
+      xbestever = evo.getInto(CMAES<double, double>::XBestEver,
                               xbestever); // allocates memory if needed
     }
     // best estimator for the optimum is xmean, therefore check
-    if ((fmean = (*pFun)(evo.getPtr(CMAES<double>::XMean))) < fbestever) {
+    const std::vector<double> xmean = evo.getPtr(CMAES<double, double>::XMean);
+    if ((fmean = (*pFun)(xmean)) < fbestever) {
       fbestever = fmean;
-      xbestever = evo.getInto(CMAES<double>::XMean, xbestever);
+      xbestever = evo.getInto(CMAES<double, double>::XMean, xbestever);
     }
 
     // abandon restarts if target fitness value was achieved or MaxFunEvals
@@ -200,39 +212,39 @@ double *optimize(double (*pFun)(double const *), int nrestarts,
   return xbestever; // was dynamically allocated, should be deleted in the end
 }
 
-double f_rand(double const *) {
+double f_rand(const std::vector<double> &) {
   double d = (double)rand() / RAND_MAX;
   while (d == 0.)
     d = (double)rand() / RAND_MAX;
   return d;
 }
 
-double f_constant(double const *) { return 1; }
+double f_constant(const std::vector<double> &) { return 1; }
 
 static double SQR(double d) { return d * d; }
 
-double f_stepsphere(double const *x) {
-  int i;
+double f_stepsphere(const std::vector<double> &x) {
+  size_t i;
   double sum = 0.;
-  int DIM = (int)(x[-1]);
+  size_t DIM = x.size();
   for (i = 0; i < DIM; ++i)
     sum += floor(x[i] * x[i]);
   return sum;
 }
 
-double f_sphere(double const *x) {
-  int i;
+double f_sphere(const std::vector<double> &x) {
+  size_t i;
   double sum = 0.;
-  int DIM = (int)(x[-1]);
+  size_t DIM = x.size();
   for (i = 0; i < DIM; ++i)
     sum += x[i] * x[i];
   return sum;
 }
 
-double f_cigar(double const *x) {
-  int i;
+double f_cigar(const std::vector<double> &x) {
+  size_t i;
   double sum = 0.;
-  int DIM = (int)(x[-1]);
+  size_t DIM = x.size();
 
   for (i = 1; i < DIM; ++i)
     sum += x[i] * x[i];
@@ -241,10 +253,10 @@ double f_cigar(double const *x) {
   return sum;
 }
 
-double f_cigtab(double const *x) {
-  int i;
+double f_cigtab(const std::vector<double> &x) {
+  size_t i;
   double sum = 0.;
-  int DIM = (int)(x[-1]);
+  size_t DIM = x.size();
 
   sum = x[0] * x[0] + 1e8 * x[DIM - 1] * x[DIM - 1];
   for (i = 1; i < DIM - 1; ++i)
@@ -252,10 +264,10 @@ double f_cigtab(double const *x) {
   return sum;
 }
 
-double f_tablet(double const *x) {
-  int i;
+double f_tablet(const std::vector<double> &x) {
+  size_t i;
   double sum = 0.;
-  int DIM = (int)(x[-1]);
+  size_t DIM = x.size();
 
   sum = 1e6 * x[0] * x[0];
   for (i = 1; i < DIM; ++i)
@@ -264,8 +276,8 @@ double f_tablet(double const *x) {
 }
 
 /* a hack, memory is never released */
-double **OrthogonalBasis(int DIM) {
-  static int b_dim;
+double **OrthogonalBasis(size_t DIM) {
+  static size_t b_dim;
   static double **b;
   double sp;
   int i, j, k;
@@ -283,13 +295,13 @@ double **OrthogonalBasis(int DIM) {
   // Otherwise initialize basis b
 
   // allocate b
-  b = (double **)calloc((unsigned)DIM, sizeof(double *));
+  b = (double **)calloc(DIM, sizeof(double *));
   if (!b) {
     printf("calloc failed in function OrthogonalBasis in file example2.cpp");
     exit(0);
   }
   for (i = 0; i < DIM; ++i) {
-    b[i] = (double *)calloc((unsigned)DIM, sizeof(double));
+    b[i] = (double *)calloc(DIM, sizeof(double));
     if (!b[i]) {
       printf("calloc failed in function Orthogonalbasis in file example2.cpp");
       exit(0);
@@ -319,10 +331,10 @@ double **OrthogonalBasis(int DIM) {
   return b;
 }
 
-double f_ellirot(double const *x) {
-  int i, k;
+double f_ellirot(const std::vector<double> &x) {
+  size_t i, k;
   double sum = 0., y;
-  int DIM = (int)(x[-1]);
+  size_t DIM = x.size();
   double **B = OrthogonalBasis(DIM);
 
   if (DIM == 1)
@@ -335,10 +347,10 @@ double f_ellirot(double const *x) {
   return sum;
 }
 
-double f_elli(double const *x) {
-  int i;
+double f_elli(const std::vector<double> &x) {
+  size_t i;
   double sum = 0.;
-  int DIM = (int)(x[-1]);
+  size_t DIM = x.size();
 
   if (DIM == 1)
     return x[0] * x[0];
@@ -347,10 +359,10 @@ double f_elli(double const *x) {
   return sum;
 }
 
-double f_elli100(double const *x) {
-  int i;
+double f_elli100(const std::vector<double> &x) {
+  size_t i;
   double sum = 0.;
-  int DIM = (int)(x[-1]);
+  size_t DIM = x.size();
 
   if (DIM == 1)
     return x[0] * x[0];
@@ -359,10 +371,10 @@ double f_elli100(double const *x) {
   return sum;
 }
 
-double f_diffpow(double const *x) {
-  int i;
+double f_diffpow(const std::vector<double> &x) {
+  size_t i;
   double sum = 0.;
-  int DIM = (int)(x[-1]);
+  size_t DIM = x.size();
 
   if (DIM == 1)
     return x[0] * x[0];
@@ -371,10 +383,10 @@ double f_diffpow(double const *x) {
   return sum;
 }
 
-double f_diffpowrot(double const *x) {
-  int i, k;
+double f_diffpowrot(const std::vector<double> &x) {
+  size_t i, k;
   double sum = 0., y;
-  int DIM = (int)(x[-1]);
+  size_t DIM = x.size();
   double **B = OrthogonalBasis(DIM);
 
   if (DIM == 1)
@@ -387,10 +399,10 @@ double f_diffpowrot(double const *x) {
   return sum;
 }
 
-double f_kugelmin1(double const *x) {
-  int i;
+double f_kugelmin1(const std::vector<double> &x) {
+  size_t i;
   double sum = 0.;
-  int DIM = (int)(x[-1]);
+  size_t DIM = x.size();
 
   for (i = 1; i < DIM; ++i)
     sum += x[i] * x[i];
@@ -400,39 +412,39 @@ double f_kugelmin1(double const *x) {
 /**
  * Rosenbrock's Function, generalized.
  */
-double f_rosenbrock(double const *x) {
+double f_rosenbrock(const std::vector<double> &x) {
   double qualitaet;
-  int i;
-  int DIM = (int)(x[-1]);
+  size_t i;
+  size_t DIM = x.size();
   qualitaet = 0.0;
 
-  for (i = DIM - 2; i >= 0; --i)
-    qualitaet += 100. * SQR(SQR(x[i]) - x[i + 1]) + SQR(1. - x[i]);
+  for (i = DIM - 1; i > 0; --i)
+    qualitaet += 100. * SQR(SQR(x[i - 1]) - x[i]) + SQR(1. - x[i - 1]);
   return (qualitaet);
 }
 
-double f_parabR(double const *x) {
-  int i;
+double f_parabR(const std::vector<double> &x) {
+  size_t i;
   double sum = 0.;
-  int DIM = (int)(x[-1]);
+  size_t DIM = x.size();
   for (i = 1; i < DIM; ++i)
     sum += x[i] * x[i];
   return -x[0] + 100. * sum;
 }
 
-double f_sharpR(double const *x) {
-  int i;
+double f_sharpR(const std::vector<double> &x) {
+  size_t i;
   double sum = 0.;
-  int DIM = (int)(x[-1]);
+  size_t DIM = x.size();
   for (i = 1; i < DIM; ++i)
     sum += x[i] * x[i];
   return -x[0] + 100 * sqrt(sum);
 }
 
-double f_ellinumtest(double const *x) {
-  int i;
+double f_ellinumtest(const std::vector<double> &x) {
+  size_t i;
   double sum = 0.;
-  int DIM = (int)(x[-1]);
+  size_t DIM = x.size();
   static double maxVerhaeltnis = 0.;
   if (maxVerhaeltnis == 0.) {
     for (maxVerhaeltnis = 1.;
@@ -460,7 +472,7 @@ double f_ellinumtest(double const *x) {
  * This is the reason why the square of the left side is in the quality
  * function.
  */
-double f_gleichsys5(double const *x) {
+double f_gleichsys5(const std::vector<double> &x) {
   double qualitaet = 0.0;
 
   static double koeff[5][6] = {/* c_1,   c_2,  c_3,   c_4,  c_5,   c_0 */
@@ -469,7 +481,7 @@ double f_gleichsys5(double const *x) {
                                {27, 1413, 191, 1032, 118, -94},
                                {199, 5402, 1032, 29203, 2331, 78172},
                                {21, 684, 118, 2331, 199, 5648}};
-  int i, j;
+  size_t i, j;
   double sum;
 
   for (i = 0; i < 5; ++i) {

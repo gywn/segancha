@@ -6,24 +6,31 @@
 
 #include <cma-es/cmaes.h>
 #include <iostream>
+#include <lexi.h>
 #include <stdlib.h>
+#include <vector>
+
+using Y = LexiProduct<double>;
+// using Y = double;
 
 /**
  * The objective (fitness) function to be minized. "cigtab" function.
  */
-double fitfun(double const *x, int N) {
+Y fitfun(const std::vector<double> &x, int N) {
   double sum = 1e4 * x[0] * x[0] + 1e-4 * x[1] * x[1];
-  for (int i = 2; i < N; ++i)
+  for (size_t i = 2; i < N; ++i)
     sum += x[i] * x[i];
-  return sum;
+  return std::vector<double>{0., sum};
 }
 
 /**
  * The optimization loop.
  */
 int main(int, char **) {
-  CMAES<double> evo;
-  double *arFunvals, *const *pop, *xfinal;
+  CMAES<double, Y> evo;
+  Y *arFunvals;
+  Individual<double, Y> *pop;
+  double *xfinal;
 
   // Initialize everything
   const int dim = 22;
@@ -33,7 +40,9 @@ int main(int, char **) {
   double stddev[dim];
   for (int i = 0; i < dim; i++)
     stddev[i] = 0.3;
-  Parameters<double> parameters;
+  Parameters<double, Y> parameters;
+  parameters.stopTolFun = std::vector<double>{0, 1e-12};
+  parameters.stopTolFunHist = std::vector<double>{0, 1e-13};
   // TODO Adjust parameters here
   parameters.init(dim, xstart, stddev);
   arFunvals = evo.init(parameters);
@@ -60,19 +69,26 @@ int main(int, char **) {
     */
 
     // evaluate the new search points using fitfun from above
-    for (int i = 0; i < evo.get(CMAES<double>::Lambda); ++i)
-      arFunvals[i] = fitfun(pop[i], (int)evo.get(CMAES<double>::Dimension));
+    for (int i = 0; i < evo.get(CMAES<double, Y>::Lambda); ++i)
+      arFunvals[i] =
+          fitfun(pop[i].x, (int)evo.get(CMAES<double, Y>::Dimension));
 
     // update the search distribution used for sampleDistribution()
-    evo.updateDistribution(arFunvals);
+    double const *xmean = evo.updateDistribution(arFunvals);
+    // for (size_t i = 0; i < (int)evo.get(CMAES<double, Y>::Dimension); ++i) {
+    //   std::cout << xmean[i] << ",";
+    // }
+    // std::cout << std::endl;
   }
   std::cout << "Stop:" << std::endl << evo.getStopMessage();
-  evo.writeToFile(CMAES<double>::WKResume,
+  evo.writeToFile(CMAES<double, Y>::WKResume,
                   "resumeevo1.dat"); // write resumable state of CMA-ES
 
   // get best estimator for the optimum, xmean
-  xfinal =
-      evo.getNew(CMAES<double>::XMean); // "XBestEver" might be used as well
+  xfinal = evo.getNew(CMAES<double, Y>::XMean); // "XBestEver"
+                                                // might be
+                                                // used as
+                                                // well
 
   // do something with final solution and finally release memory
   delete[] xfinal;

@@ -109,13 +109,28 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <vector>
+
+/**
+ * @class Individual
+ *
+ * @field x vector of parameters of native scalar type (float, double, etc.)
+ * @field value linearly ordered object of the the object function value, which
+ * supports all comparison operators, additive(+/-) group operations and
+ * initialization through 0 or std::numeric_limit<Scalar>::max()
+ */
+template <typename Scalar, typename Ordered = Scalar> class Individual {
+public:
+  std::vector<Scalar> x;
+  Ordered value;
+};
 
 /**
  * @class CMAES
  * Evolution Strategies with Covariance Matrix Adaptation. The public interface
  * of the optimization algorithm.
  */
-template <typename T> class CMAES {
+template <typename Scalar, typename Ordered = Scalar> class CMAES {
 public:
   /**
    * Keys for get().
@@ -190,65 +205,67 @@ private:
   //! Implementation version.
   std::string version;
   //!< Random number generator.
-  Random<T> rand;
+  Random<Scalar> rand;
   //!< CMA-ES parameters.
-  Parameters<T> params;
+  Parameters<Scalar, Ordered> params;
 
   //! Step size.
-  T sigma;
+  Scalar sigma;
   //! Mean x vector, "parent".
-  T *xmean;
+  Scalar *xmean;
   //! Best sample ever.
-  T *xBestEver;
+  Individual<Scalar, Ordered> xBestEver;
+  Scalar evalsBestEver;
   //! x-vectors, lambda offspring.
-  T **population;
+  Individual<Scalar, Ordered> *population;
   //! Sorting index of sample population.
-  int *index;
-  //! History of function values.
-  T *funcValueHistory;
+  size_t *index;
+  //! History of last historySize function values.
+  Ordered *funcValueHistory;
+  size_t historySize;
 
-  T chiN;
+  Scalar chiN;
   //! Lower triangular matrix: i>=j for C[i][j].
-  T **C;
+  Scalar **C;
   //! Matrix with normalize eigenvectors in columns.
-  T **B;
+  Scalar **B;
   //! Axis lengths.
-  T *rgD;
+  Scalar *rgD;
 
   //! Anisotropic evolution path (for covariance).
-  T *pc;
+  Scalar *pc;
   //! Isotropic evolution path (for step length).
-  T *ps;
+  Scalar *ps;
   //! Last mean.
-  T *xold;
+  Scalar *xold;
   //! Output vector.
-  T *output;
+  // Scalar *output;
   //! B*D*z.
-  T *BDz;
+  Scalar *BDz;
   //! Temporary (random) vector used in different places.
-  T *tempRandom;
+  Scalar *tempRandom;
   //! Objective function values of the population.
-  T *functionValues;
+  Ordered *functionValues;
   //!< Public objective function value array returned by init().
-  T *publicFitness;
+  Ordered *publicFitness;
 
   //! Generation number.
-  T gen;
+  size_t gen;
   //! Algorithm state.
   enum { INITIALIZED, SAMPLED, UPDATED } state;
 
   // repeatedly used for output
-  T maxdiagC;
-  T mindiagC;
-  T maxEW;
-  T minEW;
+  Scalar maxdiagC;
+  Scalar mindiagC;
+  Scalar maxEW;
+  Scalar minEW;
 
   bool eigensysIsUptodate;
   bool doCheckEigen; //!< control via signals.par
-  T genOfEigensysUpdate;
+  Scalar genOfEigensysUpdate;
 
-  T dMaxSignifKond;
-  T dLastMinEWgroesserNull;
+  Scalar dMaxSignifKond;
+  Scalar dLastMinEWgroesserNull;
 
   bool isResumeDone;
 
@@ -272,13 +289,13 @@ private:
    * @param diag (output) N eigenvalues.
    * @param Q (output) Columns are normalized eigenvectors.
    */
-  void eigen(T *diag, T **Q, T *rgtmp) {
+  void eigen(Scalar *diag, Scalar **Q, Scalar *rgtmp) {
     assert(rgtmp && "eigen(): input parameter rgtmp must be non-NULL");
 
     if (C != Q) // copy C to Q
     {
-      for (int i = 0; i < params.N; ++i)
-        for (int j = 0; j <= i; ++j)
+      for (size_t i = 0; i < params.N; ++i)
+        for (size_t j = 0; j <= i; ++j)
           Q[i][j] = Q[j][i] = C[i][j];
     }
 
@@ -291,12 +308,12 @@ private:
    * operations writes to error file.
    * @return number of detected inaccuracies
    */
-  int checkEigen(T *diag, T **Q) {
-    // compute Q diag Q^T and Q Q^T to check
+  int checkEigen(Scalar *diag, Scalar **Q) {
+    // compute Q diag Q^Scalar and Q Q^Scalar to check
     int res = 0;
     for (int i = 0; i < params.N; ++i)
       for (int j = 0; j < params.N; ++j) {
-        T cc = 0., dd = 0.;
+        Scalar cc = 0., dd = 0.;
         for (int k = 0; k < params.N; ++k) {
           cc += diag[k] * Q[i][k] * Q[j][k];
           dd += Q[i][k] * Q[j][k];
@@ -304,9 +321,9 @@ private:
         // check here, is the normalization the right one?
         const bool cond1 = fabs(cc - C[i > j ? i : j][i > j ? j : i]) /
                                sqrt(C[i][i] * C[j][j]) >
-                           T(1e-10);
+                           Scalar(1e-10);
         const bool cond2 =
-            fabs(cc - C[i > j ? i : j][i > j ? j : i]) > T(3e-14);
+            fabs(cc - C[i > j ? i : j][i > j ? j : i]) > Scalar(3e-14);
         if (cond1 && cond2) {
           std::stringstream s;
           s << i << " " << j << ": " << cc << " "
@@ -317,7 +334,7 @@ private:
                              << std::endl;
           ++res;
         }
-        if (std::fabs(dd - (i == j)) > T(1e-10)) {
+        if (std::fabs(dd - (i == j)) > Scalar(1e-10)) {
           std::stringstream s;
           s << i << " " << j << " " << dd;
           if (params.logWarnings)
@@ -339,26 +356,26 @@ private:
    * @param V input: matrix output of Householder. output: basis of
    *          eigenvectors, according to d
    */
-  void ql(T *d, T *e, T **V) {
+  void ql(Scalar *d, Scalar *e, Scalar **V) {
     const int n = params.N;
-    T f(0);
-    T tst1(0);
-    const T eps(2.22e-16); // 2.0^-52.0 = 2.22e-16
+    Scalar f(0);
+    Scalar tst1(0);
+    const Scalar eps(2.22e-16); // 2.0^-52.0 = 2.22e-16
 
     // shift input e
-    T *ep1 = e;
-    for (T *ep2 = e + 1, *const end = e + n; ep2 != end; ep1++, ep2++)
+    Scalar *ep1 = e;
+    for (Scalar *ep2 = e + 1, *const end = e + n; ep2 != end; ep1++, ep2++)
       *ep1 = *ep2;
-    *ep1 = T(0); // never changed again
+    *ep1 = Scalar(0); // never changed again
 
     for (int l = 0; l < n; l++) {
       // find small subdiagonal element
-      T &el = e[l];
-      T &dl = d[l];
-      const T smallSDElement = std::fabs(dl) + std::fabs(el);
+      Scalar &el = e[l];
+      Scalar &dl = d[l];
+      const Scalar smallSDElement = std::fabs(dl) + std::fabs(el);
       if (tst1 < smallSDElement)
         tst1 = smallSDElement;
-      const T epsTst1 = eps * tst1;
+      const Scalar epsTst1 = eps * tst1;
       int m = l;
       while (m < n) {
         if (std::fabs(e[m]) <= epsTst1)
@@ -369,18 +386,18 @@ private:
       // if m == l, d[l] is an eigenvalue, otherwise, iterate.
       if (m > l) {
         do {
-          T h, g = dl;
-          T &dl1r = d[l + 1];
-          T p = (dl1r - g) / (T(2) * el);
-          T r = myhypot(p, T(1));
+          Scalar h, g = dl;
+          Scalar &dl1r = d[l + 1];
+          Scalar p = (dl1r - g) / (Scalar(2) * el);
+          Scalar r = myhypot(p, Scalar(1));
 
           // compute implicit shift
           if (p < 0)
             r = -r;
-          const T pr = p + r;
+          const Scalar pr = p + r;
           dl = el / pr;
           h = g - dl;
-          const T dl1 = el * pr;
+          const Scalar dl1 = el * pr;
           dl1r = dl1;
           for (int i = l + 2; i < n; i++)
             d[i] -= h;
@@ -388,32 +405,32 @@ private:
 
           // implicit QL transformation.
           p = d[m];
-          T c(1);
-          T c2(1);
-          T c3(1);
-          const T el1 = e[l + 1];
-          T s(0);
-          T s2(0);
+          Scalar c(1);
+          Scalar c2(1);
+          Scalar c3(1);
+          const Scalar el1 = e[l + 1];
+          Scalar s(0);
+          Scalar s2(0);
           for (int i = m - 1; i >= l; i--) {
             c3 = c2;
             c2 = c;
             s2 = s;
-            const T &ei = e[i];
+            const Scalar &ei = e[i];
             g = c * ei;
             h = c * p;
             r = myhypot(p, ei);
             e[i + 1] = s * r;
             s = ei / r;
             c = p / r;
-            const T &di = d[i];
+            const Scalar &di = d[i];
             p = c * di - s * g;
             d[i + 1] = h + s * (c * g + s * di);
 
             // accumulate transformation.
             for (int k = 0; k < n; k++) {
-              T &Vki1 = V[k][i + 1];
+              Scalar &Vki1 = V[k][i + 1];
               h = Vki1;
-              T &Vki = V[k][i];
+              Scalar &Vki = V[k][i];
               Vki1 = s * Vki + c * h;
               Vki *= c;
               Vki -= s * h;
@@ -437,7 +454,7 @@ private:
    * @param d output: diagonal
    * @param e output: [0..n-1], off diagonal (elements 1..n-1)
    */
-  void householder(T **V, T *d, T *e) {
+  void householder(Scalar **V, Scalar *d, Scalar *e) {
     const int n = params.N;
 
     for (int j = 0; j < n; j++) {
@@ -448,9 +465,9 @@ private:
 
     for (int i = n - 1; i > 0; i--) {
       // scale to avoid under/overflow
-      T scale = 0.0;
-      T h = 0.0;
-      for (T *pd = d, *const dend = d + i; pd != dend; pd++) {
+      Scalar scale = 0.0;
+      Scalar h = 0.0;
+      for (Scalar *pd = d, *const dend = d + i; pd != dend; pd++) {
         scale += std::fabs(*pd);
       }
       if (scale == 0.0) {
@@ -462,26 +479,26 @@ private:
         }
       } else {
         // generate Householder vector
-        for (T *pd = d, *const dend = d + i; pd != dend; pd++) {
+        for (Scalar *pd = d, *const dend = d + i; pd != dend; pd++) {
           *pd /= scale;
           h += *pd * *pd;
         }
-        T &dim1 = d[i - 1];
-        T f = dim1;
-        T g = f > 0 ? -std::sqrt(h) : std::sqrt(h);
+        Scalar &dim1 = d[i - 1];
+        Scalar f = dim1;
+        Scalar g = f > 0 ? -std::sqrt(h) : std::sqrt(h);
         e[i] = scale * g;
         h = h - f * g;
         dim1 = f - g;
-        memset((void *)e, 0, (size_t)i * sizeof(T));
+        memset((void *)e, 0, (size_t)i * sizeof(Scalar));
 
         // apply similarity transformation to remaining columns
         for (int j = 0; j < i; j++) {
           f = d[j];
           V[j][i] = f;
-          T &ej = e[j];
+          Scalar &ej = e[j];
           g = ej + V[j][j] * f;
           for (int k = j + 1; k <= i - 1; k++) {
-            T &Vkj = V[k][j];
+            Scalar &Vkj = V[k][j];
             g += Vkj * d[k];
             e[k] += Vkj * f;
           }
@@ -489,16 +506,16 @@ private:
         }
         f = 0.0;
         for (int j = 0; j < i; j++) {
-          T &ej = e[j];
+          Scalar &ej = e[j];
           ej /= h;
           f += ej * d[j];
         }
-        T hh = f / (h + h);
+        Scalar hh = f / (h + h);
         for (int j = 0; j < i; j++) {
           e[j] -= hh * d[j];
         }
         for (int j = 0; j < i; j++) {
-          T &dj = d[j];
+          Scalar &dj = d[j];
           f = dj;
           g = e[j];
           for (int k = j; k <= i - 1; k++) {
@@ -514,8 +531,8 @@ private:
     // accumulate transformations
     const int nm1 = n - 1;
     for (int i = 0; i < nm1; i++) {
-      T h;
-      T &Vii = V[i][i];
+      Scalar h;
+      Scalar &Vii = V[i][i];
       V[n - 1][i] = Vii;
       Vii = 1.0;
       h = d[i + 1];
@@ -524,9 +541,9 @@ private:
           d[k] = V[k][i + 1] / h;
         }
         for (int j = 0; j <= i; j++) {
-          T g = 0.0;
+          Scalar g = 0.0;
           for (int k = 0; k <= i; k++) {
-            T *Vk = V[k];
+            Scalar *Vk = V[k];
             g += Vk[i + 1] * Vk[j];
           }
           for (int k = 0; k <= i; k++) {
@@ -539,7 +556,7 @@ private:
       }
     }
     for (int j = 0; j < n; j++) {
-      T &Vnm1j = V[n - 1][j];
+      Scalar &Vnm1j = V[n - 1][j];
       d[j] = Vnm1j;
       Vnm1j = 0.0;
     }
@@ -550,8 +567,9 @@ private:
   /**
    * Dirty index sort.
    */
-  void sortIndex(const T *rgFunVal, int *iindex, int n) {
-    int i, j;
+  template <typename LessThanComparable>
+  void sortIndex(const LessThanComparable *rgFunVal, size_t *iindex, size_t n) {
+    size_t i, j;
     for (i = 1, iindex[0] = 0; i < n; ++i) {
       for (j = i; j > 0; --j) {
         if (rgFunVal[iindex[j - 1]] < rgFunVal[i])
@@ -566,27 +584,29 @@ private:
     const int N = params.N;
     bool diag = params.diagonalCov == 1 || params.diagonalCov >= gen;
 
-    if (params.ccov != T(0)) {
+    if (params.ccov != Scalar(0)) {
       // definitions for speeding up inner-most loop
-      const T mucovinv = T(1) / params.mucov;
-      const T commonFactor = params.ccov * (diag ? (N + T(1.5)) / T(3) : T(1));
-      const T ccov1 = std::min(commonFactor * mucovinv, T(1));
-      const T ccovmu = std::min(commonFactor * (T(1) - mucovinv), T(1) - ccov1);
-      const T sigmasquare = sigma * sigma;
-      const T onemccov1ccovmu = T(1) - ccov1 - ccovmu;
-      const T longFactor =
-          (T(1) - hsig) * params.ccumcov * (T(2) - params.ccumcov);
+      const Scalar mucovinv = Scalar(1) / params.mucov;
+      const Scalar commonFactor =
+          params.ccov * (diag ? (N + Scalar(1.5)) / Scalar(3) : Scalar(1));
+      const Scalar ccov1 = std::min(commonFactor * mucovinv, Scalar(1));
+      const Scalar ccovmu =
+          std::min(commonFactor * (Scalar(1) - mucovinv), Scalar(1) - ccov1);
+      const Scalar sigmasquare = sigma * sigma;
+      const Scalar onemccov1ccovmu = Scalar(1) - ccov1 - ccovmu;
+      const Scalar longFactor =
+          (Scalar(1) - hsig) * params.ccumcov * (Scalar(2) - params.ccumcov);
 
       eigensysIsUptodate = false;
 
       // update covariance matrix
-      for (int i = 0; i < N; ++i)
-        for (int j = diag ? i : 0; j <= i; ++j) {
-          T &Cij = C[i][j];
+      for (size_t i = 0; i < N; ++i)
+        for (size_t j = diag ? i : 0; j <= i; ++j) {
+          Scalar &Cij = C[i][j];
           Cij = onemccov1ccovmu * Cij +
                 ccov1 * (pc[i] * pc[j] + longFactor * Cij);
           for (int k = 0; k < params.mu; ++k) { // additional rank mu update
-            const T *rgrgxindexk = population[index[k]];
+            const std::vector<Scalar> &rgrgxindexk = population[index[k]].x;
             Cij += ccovmu * params.weights[k] * (rgrgxindexk[i] - xold[i]) *
                    (rgrgxindexk[j] - xold[j]) / sigmasquare;
           }
@@ -594,7 +614,7 @@ private:
       // update maximal and minimal diagonal value
       maxdiagC = mindiagC = C[0][0];
       for (int i = 1; i < N; ++i) {
-        const T &Cii = C[i][i];
+        const Scalar &Cii = C[i][i];
         if (maxdiagC < Cii)
           maxdiagC = Cii;
         else if (mindiagC > Cii)
@@ -613,7 +633,8 @@ private:
     for (int i = 0; i < params.N; ++i)
       while (this->sigma * std::sqrt(this->C[i][i]) <
              this->params.rgDiffMinChange[i])
-        this->sigma *= std::exp(T(0.05) + this->params.cs / this->params.damps);
+        this->sigma *=
+            std::exp(Scalar(0.05) + this->params.cs / this->params.damps);
   }
 
   /**
@@ -621,11 +642,11 @@ private:
    * @param x Search space vector.
    * @param eps Mutation factor.
    */
-  void addMutation(T *x, T eps = 1.0) {
+  void addMutation(std::vector<Scalar> &x, Scalar eps = 1.0) {
     for (int i = 0; i < params.N; ++i)
       tempRandom[i] = rgD[i] * rand.gauss();
     for (int i = 0; i < params.N; ++i) {
-      T sum = 0.0;
+      Scalar sum = 0.0;
       for (int j = 0; j < params.N; ++j)
         sum += B[i][j] * tempRandom[j];
       x[i] = xmean[i] + eps * sigma * sum;
@@ -678,52 +699,52 @@ private:
       file << "function evaluations " << (long)countevals << std::endl;
       file << "elapsed (CPU) time [s] " << std::setprecision(2)
            << eigenTimings.totaltotaltime << std::endl;
-      file << "function value f(x)=" << population[index[0]][params.N]
-           << std::endl;
+      file << "function value f(x)=" << population[index[0]].value << std::endl;
       file << "maximal standard deviation " << sigma * std::sqrt(maxdiagC)
            << std::endl;
       file << "minimal standard deviation " << sigma * std::sqrt(mindiagC)
            << std::endl;
       file << "sigma " << sigma << std::endl;
       file << "axisratio "
-           << (maxElement(rgD, params.N) / minElement(rgD, params.N))
+           << (maxElement(rgD, (size_t)params.N) /
+               minElement(rgD, (size_t)params.N))
            << std::endl;
-      file << "xbestever found after " << std::setprecision(0)
-           << xBestEver[params.N + 1] << "evaluations, function value "
-           << xBestEver[params.N] << std::endl;
-      for (int i = 0; i < params.N; ++i)
-        file << " " << std::setw(12) << xBestEver[i]
+      file << "xbestever found after " << std::setprecision(0) << evalsBestEver
+           << "evaluations, function value " << xBestEver.value << std::endl;
+      for (size_t i = 0; i < params.N; ++i)
+        file << " " << std::setw(12) << xBestEver.x[i]
              << (i % 5 == 4 || i == params.N - 1 ? '\n' : ' ');
       file << "xbest (of last generation, function value "
-           << population[index[0]][params.N] << ")" << std::endl;
-      for (int i = 0; i < params.N; ++i)
-        file << " " << std::setw(12) << population[index[0]][i]
+           << population[index[0]].value << ")" << std::endl;
+      for (size_t i = 0; i < params.N; ++i)
+        file << " " << std::setw(12) << population[index[0]].x[i]
              << (i % 5 == 4 || i == params.N - 1 ? '\n' : ' ');
       file << "xmean" << std::endl;
-      for (int i = 0; i < params.N; ++i)
+      for (size_t i = 0; i < params.N; ++i)
         file << " " << std::setw(12) << xmean[i]
              << (i % 5 == 4 || i == params.N - 1 ? '\n' : ' ');
       file << "Standard deviation of coordinate axes (sigma*sqrt(diag(C)))"
            << std::endl;
-      for (int i = 0; i < params.N; ++i)
+      for (size_t i = 0; i < params.N; ++i)
         file << " " << std::setw(12) << sigma * std::sqrt(C[i][i])
              << (i % 5 == 4 || i == params.N - 1 ? '\n' : ' ');
       file << "Main axis lengths of mutation ellipsoid (sigma*diag(D))"
            << std::endl;
-      for (int i = 0; i < params.N; ++i)
+      for (size_t i = 0; i < params.N; ++i)
         tempRandom[i] = rgD[i];
       std::sort(tempRandom, tempRandom + params.N);
-      for (int i = 0; i < params.N; ++i)
-        file << " " << std::setw(12) << sigma * tempRandom[params.N - 1 - i]
+      for (size_t i = 0; i < params.N; ++i)
+        file << " " << std::setw(12)
+             << sigma * tempRandom[(size_t)params.N - 1 - i]
              << (i % 5 == 4 || i == params.N - 1 ? '\n' : ' ');
       file << "Longest axis (b_i where d_ii=max(diag(D))" << std::endl;
-      int k = maxIndex(rgD, params.N);
-      for (int i = 0; i < params.N; ++i)
+      size_t k = maxIndex(rgD, (size_t)params.N);
+      for (size_t i = 0; i < params.N; ++i)
         file << " " << std::setw(12) << B[i][k]
              << (i % 5 == 4 || i == params.N - 1 ? '\n' : ' ');
       file << "Shortest axis (b_i where d_ii=max(diag(D))" << std::endl;
-      k = minIndex(rgD, params.N);
-      for (int i = 0; i < params.N; ++i)
+      k = minIndex(rgD, (size_t)params.N);
+      for (size_t i = 0; i < params.N; ++i)
         file << " " << std::setw(12) << B[i][k]
              << (i % 5 == 4 || i == params.N - 1 ? '\n' : ' ');
       file << std::endl;
@@ -752,7 +773,7 @@ private:
       file << std::endl;
     }
     if (key & WKFBestEver) {
-      file << xBestEver[params.N] << std::endl;
+      file << xBestEver.value << std::endl;
     }
     if (key & WKCGeneration) {
       file << gen << std::endl;
@@ -764,8 +785,8 @@ private:
       file << params.lambda << std::endl;
     }
     if (key & WKB) {
-      int *iindex = new int[params.N];
-      sortIndex(rgD, iindex, params.N);
+      size_t *iindex = new size_t[params.N];
+      sortIndex(rgD, iindex, (size_t)params.N);
       for (int i = 0; i < params.N; ++i)
         for (int j = 0; j < params.N; ++j) {
           file << B[j][iindex[params.N - 1 - i]];
@@ -779,8 +800,8 @@ private:
       file << std::endl;
     }
     if (key & WKXBest) {
-      for (int i = 0; i < params.N; ++i)
-        file << (i == 0 ? "" : "\t") << population[index[0]][i];
+      for (size_t i = 0; i < params.N; ++i)
+        file << (i == 0 ? "" : "\t") << population[index[0]].x[i];
       file << std::endl;
     }
     if (key & WKClock) {
@@ -795,10 +816,10 @@ private:
   }
 
 public:
-  T countevals; //!< objective function evaluations
+  Scalar countevals; //!< objective function evaluations
   Timing eigenTimings;
 
-  CMAES() : version("1.0alpha") {}
+  CMAES() : version("1.1alpha") {}
 
   /**
    * Releases the dynamically allocated memory, including that of the return
@@ -809,24 +830,24 @@ public:
     delete[] ps;
     delete[] tempRandom;
     delete[] BDz;
-    delete[]-- xmean;
-    delete[]-- xold;
-    delete[]-- xBestEver;
-    delete[]-- output;
+    delete[] xmean;
+    delete[] xold;
+    // delete[]-- xBestEver;
+    // delete[]-- output;
     delete[] rgD;
     for (int i = 0; i < params.N; ++i) {
       delete[] C[i];
       delete[] B[i];
     }
-    for (int i = 0; i < params.lambda; ++i)
-      delete[]-- population[i];
+    // for (int i = 0; i < params.lambda; ++i)
+    //   delete[]-- population[i];
     delete[] population;
     delete[] C;
     delete[] B;
     delete[] index;
     delete[] publicFitness;
     delete[] functionValues;
-    delete[]-- funcValueHistory;
+    delete[] funcValueHistory;
   }
 
   /**
@@ -836,101 +857,110 @@ public:
    *         pass them to updateDistribution(). Not that after the desctructor
    *         was called, the array is deleted.
    */
-  T *init(const Parameters<T> &parameters) {
+  Ordered *init(const Parameters<Scalar, Ordered> &parameters) {
     params = parameters;
 
     stopMessage = "";
 
-    T trace(0);
+    Scalar trace(0);
     for (int i = 0; i < params.N; ++i)
       trace += params.rgInitialStds[i] * params.rgInitialStds[i];
     sigma = std::sqrt(trace / params.N);
 
-    chiN = std::sqrt((T)params.N) * (T(1) - T(1) / (T(4) * params.N) +
-                                     T(1) / (T(21) * params.N * params.N));
+    chiN = std::sqrt((Scalar)params.N) *
+           (Scalar(1) - Scalar(1) / (Scalar(4) * params.N) +
+            Scalar(1) / (Scalar(21) * params.N * params.N));
     eigensysIsUptodate = true;
     doCheckEigen = false;
     genOfEigensysUpdate = 0;
     isResumeDone = false;
 
-    T dtest;
-    for (dtest = T(1); dtest && dtest < T(1.1) * dtest; dtest *= T(2))
-      if (dtest == dtest + T(1))
+    Scalar dtest;
+    for (dtest = Scalar(1); dtest != 0 && dtest < Scalar(1.1) * dtest;
+         dtest *= Scalar(2))
+      if (dtest == dtest + Scalar(1))
         break;
-    dMaxSignifKond = dtest / T(1000); // not sure whether this is really save,
-                                      // 100 does not work well enough
+    dMaxSignifKond =
+        dtest / Scalar(1000); // not sure whether this is really save,
+                              // 100 does not work well enough
 
     gen = 0;
     countevals = 0;
     state = INITIALIZED;
-    dLastMinEWgroesserNull = T(1);
+    dLastMinEWgroesserNull = Scalar(1);
     printtime = writetime = firstwritetime = firstprinttime = 0;
 
-    pc = new T[params.N];
-    ps = new T[params.N];
-    tempRandom = new T[params.N + 1];
-    BDz = new T[params.N];
-    xmean = new T[params.N + 2];
-    xmean[0] = params.N;
-    ++xmean;
-    xold = new T[params.N + 2];
-    xold[0] = params.N;
-    ++xold;
-    xBestEver = new T[params.N + 3];
-    xBestEver[0] = params.N;
-    ++xBestEver;
-    xBestEver[params.N] = std::numeric_limits<T>::max();
-    output = new T[params.N + 2];
-    output[0] = params.N;
-    ++output;
-    rgD = new T[params.N];
-    C = new T *[params.N];
-    B = new T *[params.N];
-    publicFitness = new T[params.lambda];
-    functionValues = new T[params.lambda];
+    pc = new Scalar[params.N];
+    ps = new Scalar[params.N];
+    tempRandom = new Scalar[params.N + 1];
+    BDz = new Scalar[params.N];
+    xmean = new Scalar[params.N];
+    // xmean[0] = params.N;
+    // ++xmean;
+    xold = new Scalar[params.N];
+    // xold[0] = params.N;
+    // ++xold;
+    xBestEver.x.resize((size_t)params.N);
+    // xBestEver = new Scalar[params.N + 3];
+    // xBestEver[0] = params.N;
+    // ++xBestEver;
+    // xBestEver[params.N] = std::numeric_limits<Scalar>::max();
+    xBestEver.value = std::numeric_limits<Scalar>::max();
+    // output = new Scalar[params.N + 2];
+    // output[0] = params.N;
+    // ++output;
+    rgD = new Scalar[params.N];
+    C = new Scalar *[params.N];
+    B = new Scalar *[params.N];
+    publicFitness = new Ordered[params.lambda];
+    functionValues = new Ordered[params.lambda];
     // functionValues[0] = params.lambda;
     // ++functionValues;
-    const int historySize = 10 + (int)ceil(3. * 10. * params.N / params.lambda);
-    funcValueHistory = new T[historySize + 1];
-    funcValueHistory[0] = (T)historySize;
-    funcValueHistory++;
+    historySize =
+        10 + (size_t)ceil(3. * 10. * (double)params.N / params.lambda);
+    funcValueHistory = new Ordered[historySize];
+    // funcValueHistory[0] = (Scalar)historySize;
+    // funcValueHistory++;
 
     for (int i = 0; i < params.N; ++i) {
-      C[i] = new T[i + 1];
-      B[i] = new T[params.N];
+      C[i] = new Scalar[i + 1];
+      B[i] = new Scalar[params.N];
     }
-    index = new int[params.lambda];
-    for (int i = 0; i < params.lambda; ++i)
+    index = new size_t[params.lambda];
+    for (size_t i = 0; i < params.lambda; ++i)
       index[i] = i;
-    population = new T *[params.lambda];
+    population = new Individual<Scalar, Ordered>[params.lambda];
     for (int i = 0; i < params.lambda; ++i) {
-      population[i] = new T[params.N + 2];
-      population[i][0] = params.N;
-      population[i]++;
-      for (int j = 0; j < params.N; j++)
-        population[i][j] = 0.0;
+      population[i].x.resize((size_t)params.N);
+      // population[i] = new Scalar[params.N + 2];
+      // population[i][0] = params.N;
+      // population[i]++;
+      // for (int j = 0; j < params.N; j++)
+      //   population[i][j] = 0.0;
+      population[i].value = std::numeric_limits<Scalar>::max();
     }
 
     // initialize newed space
     for (int i = 0; i < params.lambda; i++) {
-      functionValues[i] = std::numeric_limits<T>::max();
+      functionValues[i] = std::numeric_limits<Scalar>::max();
     }
     for (int i = 0; i < historySize; i++) {
-      funcValueHistory[i] = std::numeric_limits<T>::max();
+      funcValueHistory[i] = std::numeric_limits<Scalar>::max();
     }
     for (int i = 0; i < params.N; ++i)
       for (int j = 0; j < i; ++j)
         C[i][j] = B[i][j] = B[j][i] = 0.;
 
     for (int i = 0; i < params.N; ++i) {
-      B[i][i] = T(1);
-      C[i][i] = rgD[i] = params.rgInitialStds[i] * std::sqrt(params.N / trace);
+      B[i][i] = Scalar(1);
+      C[i][i] = rgD[i] =
+          params.rgInitialStds[i] * std::sqrt((double)params.N / trace);
       C[i][i] *= C[i][i];
-      pc[i] = ps[i] = T(0);
+      pc[i] = ps[i] = Scalar(0);
     }
-    minEW = minElement(rgD, params.N);
+    minEW = minElement(rgD, (size_t)params.N);
     minEW = minEW * minEW;
-    maxEW = maxElement(rgD, params.N);
+    maxEW = maxElement(rgD, (size_t)params.N);
     maxEW = maxEW * maxEW;
 
     maxdiagC = C[0][0];
@@ -1110,7 +1140,7 @@ public:
    * @return A pointer to a "population" of lambda N-dimensional multivariate
    * normally distributed samples.
    */
-  T *const *samplePopulation() {
+  Individual<Scalar, Ordered> *samplePopulation() {
     bool diag = params.diagonalCov == 1 || params.diagonalCov >= gen;
 
     // calculate eigensystem
@@ -1120,8 +1150,8 @@ public:
       else {
         for (int i = 0; i < params.N; ++i)
           rgD[i] = std::sqrt(C[i][i]);
-        minEW = square(minElement(rgD, params.N));
-        maxEW = square(maxElement(rgD, params.N));
+        minEW = square(minElement(rgD, (size_t)params.N));
+        maxEW = square(maxElement(rgD, (size_t)params.N));
         eigensysIsUptodate = true;
         eigenTimings.start();
       }
@@ -1131,16 +1161,16 @@ public:
 
     for (int iNk = 0; iNk < params.lambda;
          ++iNk) { // generate scaled random vector D*z
-      T *rgrgxink = population[iNk];
-      for (int i = 0; i < params.N; ++i)
+      std::vector<Scalar> &rgrgxink = population[iNk].x;
+      for (size_t i = 0; i < params.N; ++i)
         if (diag)
           rgrgxink[i] = xmean[i] + sigma * rgD[i] * rand.gauss();
         else
           tempRandom[i] = rgD[i] * rand.gauss();
       if (!diag)
-        for (int i = 0; i < params.N; ++i) // add mutation sigma*B*(D*z)
+        for (size_t i = 0; i < params.N; ++i) // add mutation sigma*B*(D*z)
         {
-          T sum = 0.0;
+          Scalar sum = 0.0;
           for (int j = 0; j < params.N; ++j)
             sum += B[i][j] * tempRandom[j];
           rgrgxink[i] = xmean[i] + sigma * sum;
@@ -1163,11 +1193,10 @@ public:
    *          must hold.
    * @return A pointer to the resampled "population".
    */
-  T *const *reSampleSingle(int i) {
-    T *x;
+  Individual<Scalar, Ordered> *reSampleSingle(int i) {
     assert(i >= 0 && i < params.lambda &&
            "reSampleSingle(): index must be between 0 and sp.lambda");
-    x = population[i];
+    std::vector<Scalar> &x = population[i].x;
     addMutation(x);
     return population;
   }
@@ -1186,9 +1215,9 @@ public:
    * @return A pointer to the resampled solution vector, equals input x for
    *         x != NULL on input.
    */
-  T *sampleSingleInto(T *x) {
-    if (!x)
-      x = new T[params.N];
+  std::vector<Scalar> &sampleSingleInto(std::vector<Scalar> &x) {
+    // if (!x)
+    //   x = new Scalar[params.N];
     addMutation(x);
     return x;
   }
@@ -1202,7 +1231,7 @@ public:
    *          sampled a new value.
    * @return A pointer to the resampled "population" member.
    */
-  T const *reSampleSingleOld(T *x) {
+  Scalar const *reSampleSingleOld(Scalar *x) {
     assert(x && "reSampleSingleOld(): Missing input x");
     addMutation(x);
     return x;
@@ -1221,9 +1250,9 @@ public:
    * @return A pointer to the perturbed solution vector, equals input x for
    *         x != NULL.
    */
-  T *perturbSolutionInto(T *x, T const *pxmean, T eps) {
+  Scalar *perturbSolutionInto(Scalar *x, Scalar const *pxmean, Scalar eps) {
     if (!x)
-      x = new T[params.N];
+      x = new Scalar[params.N];
     assert(pxmean && "perturbSolutionInto(): pxmean was not given");
     addMutation(x, eps);
     return x;
@@ -1236,7 +1265,7 @@ public:
    * @param fitnessValues An array of \f$\lambda\f$ function values.
    * @return Mean value of the new distribution.
    */
-  T *updateDistribution(const T *fitnessValues) {
+  Scalar *updateDistribution(const Ordered *fitnessValues) {
     const int N = params.N;
     bool diag = params.diagonalCov == 1 || params.diagonalCov >= gen;
 
@@ -1252,16 +1281,27 @@ public:
       params.logStream << "updateDistribution(): unexpected state" << std::endl;
 
     // assign function values
-    for (int i = 0; i < params.lambda; ++i)
-      population[i][N] = functionValues[i] = fitnessValues[i];
+    for (int i = 0; i < params.lambda; ++i) {
+      // std::cout << i << ": " << fitnessValues[i] << std::endl;
+      population[i].value = functionValues[i] = fitnessValues[i];
+    }
 
     // Generate index
-    sortIndex(fitnessValues, index, params.lambda);
+    // std::cout << "[";
+    // for (size_t i = 0; i < params.lambda; ++i) {
+    //   std::cout << index[i] << ",";
+    // }
+    // std::cout << "] => [";
+    sortIndex(fitnessValues, index, (size_t)params.lambda);
+    // for (size_t i = 0; i < params.lambda; ++i) {
+    //   std::cout << index[i] << ",";
+    // }
+    // std::cout << "]" << std::endl;
 
     // Test if function values are identical, escape flat fitness
     if (fitnessValues[index[0]] ==
         fitnessValues[index[(int)params.lambda / 2]]) {
-      sigma *= std::exp(T(0.2) + params.cs / params.damps);
+      sigma *= std::exp(Scalar(0.2) + params.cs / params.damps);
       if (params.logWarnings) {
         params.logStream
             << "Warning: sigma increased due to equal function values"
@@ -1271,30 +1311,37 @@ public:
     }
 
     // update function value history
-    for (int i = (int)*(funcValueHistory - 1) - 1; i > 0; --i)
+    for (size_t i = historySize - 1; i > 0; --i)
       funcValueHistory[i] = funcValueHistory[i - 1];
     funcValueHistory[0] = fitnessValues[index[0]];
 
     // update xbestever
-    if (xBestEver[N] > population[index[0]][N] || gen == 1)
-      for (int i = 0; i <= N; ++i) {
-        xBestEver[i] = population[index[0]][i];
-        xBestEver[N + 1] = countevals;
-      }
+    // std::cout << population[index[0]].value << std::endl;
+    if (xBestEver.value > population[index[0]].value || gen == 1) {
+      // std::cout << xBestEver.value << " -> " << population[index[0]].value <<
+      // std::endl;
+      xBestEver = population[index[0]];
+      evalsBestEver = countevals;
+      // for (int i = 0; i < N; ++i) {
+      //   // xBestEver.x[i] = population[index[0]].x[i]; /* TODO: use
+      //   std::vector copy assign */
+      //   // xBestEver.value = population[index[0]].value;
+      // }
+    }
 
-    const T sqrtmueffdivsigma = std::sqrt(params.mueff) / sigma;
+    const Scalar sqrtmueffdivsigma = std::sqrt(params.mueff) / sigma;
     // calculate xmean and rgBDz~N(0,C)
-    for (int i = 0; i < N; ++i) {
+    for (size_t i = 0; i < N; ++i) {
       xold[i] = xmean[i];
       xmean[i] = 0.;
       for (int iNk = 0; iNk < params.mu; ++iNk)
-        xmean[i] += params.weights[iNk] * population[index[iNk]][i];
+        xmean[i] += params.weights[iNk] * population[index[iNk]].x[i];
       BDz[i] = sqrtmueffdivsigma * (xmean[i] - xold[i]);
     }
 
     // calculate z := D^(-1)* B^(-1)* rgBDz into rgdTmp
     for (int i = 0; i < N; ++i) {
-      T sum;
+      Scalar sum;
       if (diag)
         sum = BDz[i];
       else {
@@ -1306,15 +1353,15 @@ public:
     }
 
     // cumulation for sigma (ps) using B*z
-    const T sqrtFactor = std::sqrt(params.cs * (T(2) - params.cs));
-    const T invps = T(1) - params.cs;
+    const Scalar sqrtFactor = std::sqrt(params.cs * (Scalar(2) - params.cs));
+    const Scalar invps = Scalar(1) - params.cs;
     for (int i = 0; i < N; ++i) {
-      T sum;
+      Scalar sum;
       if (diag)
         sum = tempRandom[i];
       else {
-        sum = T(0);
-        T *Bi = B[i];
+        sum = Scalar(0);
+        Scalar *Bi = B[i];
         for (int j = 0; j < N; ++j)
           sum += Bi[j] * tempRandom[j];
       }
@@ -1322,20 +1369,21 @@ public:
     }
 
     // calculate norm(ps)^2
-    T psxps(0);
+    Scalar psxps(0);
     for (int i = 0; i < N; ++i) {
-      const T &rgpsi = ps[i];
+      const Scalar &rgpsi = ps[i];
       psxps += rgpsi * rgpsi;
     }
 
     // cumulation for covariance matrix (pc) using B*D*z~N(0,C)
     int hsig = std::sqrt(psxps) /
-                   std::sqrt(T(1) - std::pow(T(1) - params.cs, T(2) * gen)) /
+                   std::sqrt(Scalar(1) - std::pow(Scalar(1) - params.cs,
+                                                  Scalar(2) * (Scalar)gen)) /
                    chiN <
-               T(1.4) + T(2) / (N + 1);
-    const T ccumcovinv = 1. - params.ccumcov;
-    const T hsigFactor =
-        hsig * std::sqrt(params.ccumcov * (T(2) - params.ccumcov));
+               Scalar(1.4) + Scalar(2) / (N + 1);
+    const Scalar ccumcovinv = 1. - params.ccumcov;
+    const Scalar hsigFactor =
+        hsig * std::sqrt(params.ccumcov * (Scalar(2) - params.ccumcov));
     for (int i = 0; i < N; ++i)
       pc[i] = ccumcovinv * pc[i] + hsigFactor * BDz[i];
 
@@ -1343,8 +1391,8 @@ public:
     adaptC2(hsig);
 
     // update of sigma
-    sigma *=
-        std::exp(((std::sqrt(psxps) / chiN) - T(1)) * params.cs / params.damps);
+    sigma *= std::exp(((std::sqrt(psxps) / chiN) - Scalar(1)) * params.cs /
+                      params.damps);
 
     state = UPDATED;
     return xmean;
@@ -1355,16 +1403,13 @@ public:
    * @param key Key of the requested scalar.
    * @return The desired value.
    */
-  T get(GetScalar key) {
+  Scalar get(GetScalar key) {
     switch (key) {
     case AxisRatio:
-      return maxElement(rgD, params.N) / minElement(rgD, params.N);
+      return maxElement(rgD, (size_t)params.N) /
+             minElement(rgD, (size_t)params.N);
     case Eval:
       return countevals;
-    case Fitness:
-      return functionValues[index[0]];
-    case FBestEver:
-      return xBestEver[params.N];
     case Generation:
       return gen;
     case MaxEval:
@@ -1391,32 +1436,50 @@ public:
   }
 
   /**
+   * Request a parameter of object function type from CMA-ES.
+   * @param key Key of the requested value.
+   * @return The desired value.
+   */
+  Ordered getValue(GetScalar key) {
+    switch (key) {
+    case Fitness:
+      return functionValues[index[0]];
+    case FBestEver:
+      return xBestEver.value;
+    default:
+      throw std::runtime_error("getValue(): No match found for key");
+    }
+  }
+
+  /**
    * Request a vector parameter from CMA-ES.
    * @param key Key of the requested vector.
    * @return Pointer to the desired value array. Its content might be
    *         overwritten during the next call to any member functions other
    *         than get().
    */
-  const T *getPtr(GetVector key) {
+  const std::vector<Scalar> getPtr(GetVector key) {
     switch (key) {
     case DiagC: {
-      for (int i = 0; i < params.N; ++i)
-        output[i] = C[i][i];
-      return output;
+      std::vector<Scalar> o((size_t)params.N);
+      for (size_t i = 0; i < params.N; ++i)
+        o[i] = C[i][i];
+      return o;
     }
     case DiagD:
-      return rgD;
+      return std::vector<Scalar>(rgD, rgD + params.N);
     case StdDev: {
-      for (int i = 0; i < params.N; ++i)
-        output[i] = sigma * std::sqrt(C[i][i]);
-      return output;
+      std::vector<Scalar> o((size_t)params.N);
+      for (size_t i = 0; i < params.N; ++i)
+        o[i] = sigma * std::sqrt(C[i][i]);
+      return o;
     }
     case XBestEver:
-      return xBestEver;
+      return xBestEver.x;
     case XBest:
-      return population[index[0]];
+      return population[index[0]].x;
     case XMean:
-      return xmean;
+      return std::vector<Scalar>(xmean, xmean + params.N);
     default:
       throw std::runtime_error("getPtr(): No match found for key");
     }
@@ -1429,7 +1492,7 @@ public:
    *         writing access to its elements. The memory must be explicitly
    *         released using delete[].
    */
-  T *getNew(GetVector key) { return getInto(key, 0); }
+  Scalar *getNew(GetVector key) { return getInto(key, 0); }
 
   /**
    * Request a vector parameter from CMA-ES.
@@ -1438,11 +1501,11 @@ public:
    *            written into. For mem == NULL new memory is allocated as with
    *            calling getNew() and must be released by the user at some point.
    */
-  T *getInto(GetVector key, T *res) {
-    T const *res0 = getPtr(key);
+  Scalar *getInto(GetVector key, Scalar *res) {
+    const std::vector<Scalar> res0 = getPtr(key);
     if (!res)
-      res = new T[params.N];
-    for (int i = 0; i < params.N; ++i)
+      res = new Scalar[params.N];
+    for (size_t i = 0; i < params.N; ++i)
       res[i] = res0[i];
     return res;
   }
@@ -1456,7 +1519,8 @@ public:
    * @return Does any stop criterion match?
    */
   bool testForTermination() {
-    T range, fac;
+    Ordered range;
+    Scalar fac;
     int iAchse, iKoo;
     int diag = params.diagonalCov == 1 || params.diagonalCov >= gen;
     int N = params.N;
@@ -1476,11 +1540,11 @@ public:
 
     // TolFun
     range = std::max(maxElement(funcValueHistory,
-                                (int)std::min(gen, *(funcValueHistory - 1))),
-                     maxElement(functionValues, params.lambda)) -
+                                std::min((size_t)gen, historySize)),
+                     maxElement(functionValues, (size_t)params.lambda)) -
             std::min(minElement(funcValueHistory,
-                                (int)std::min(gen, *(funcValueHistory - 1))),
-                     minElement(functionValues, params.lambda));
+                                std::min((size_t)gen, historySize)),
+                     minElement(functionValues, (size_t)params.lambda));
 
     if (gen > 0 && range <= params.stopTolFun) {
       message << "TolFun: function value differences " << range
@@ -1488,9 +1552,9 @@ public:
     }
 
     // TolFunHist
-    if (gen > *(funcValueHistory - 1)) {
-      range = maxElement(funcValueHistory, (int)*(funcValueHistory - 1)) -
-              minElement(funcValueHistory, (int)*(funcValueHistory - 1));
+    if (gen > historySize) {
+      range = maxElement(funcValueHistory, historySize) -
+              minElement(funcValueHistory, historySize);
       if (range <= params.stopTolFunHist)
         message << "TolFunHist: history of function value changes " << range
                 << " stopTolFunHist=" << params.stopTolFunHist << std::endl;
@@ -1547,7 +1611,7 @@ public:
     // Component of xmean is not changed anymore
     for (iKoo = 0; iKoo < N; ++iKoo) {
       if (xmean[iKoo] ==
-          xmean[iKoo] + sigma * std::sqrt(C[iKoo][iKoo]) / T(5)) {
+          xmean[iKoo] + sigma * std::sqrt(C[iKoo][iKoo]) / Scalar(5)) {
         message << "NoEffectCoordinate: standard deviation 0.2*"
                 << (sigma * std::sqrt(C[iKoo][iKoo])) << " in coordinate "
                 << iKoo << " without effect" << std::endl;
@@ -1595,7 +1659,7 @@ public:
 
   /**
    * Conducts the eigendecomposition of C into B and D such that
-   * \f$C = B \cdot D \cdot D \cdot B^T\f$ and \f$B \cdot B^T = I\f$
+   * \f$C = B \cdot D \cdot D \cdot B^Scalar\f$ and \f$B \cdot B^Scalar = I\f$
    * and D diagonal and positive.
    * @param force For force == true the eigendecomposion is conducted even if
    *              eigenvector and values seem to be up to date.
@@ -1623,8 +1687,8 @@ public:
 
     // find largest and smallest eigenvalue, they are supposed to be sorted
     // anyway
-    minEW = minElement(rgD, params.N);
-    maxEW = maxElement(rgD, params.N);
+    minEW = minElement(rgD, (size_t)params.N);
+    maxEW = maxElement(rgD, (size_t)params.N);
 
     if (doCheckEigen) // needs O(n^3)! writes, in case, error message in error
                       // file
@@ -1643,7 +1707,7 @@ public:
    * @param newxmean new mean, if it is NULL, it will be set to the current mean
    * @return new mean
    */
-  T const *setMean(const T *newxmean) {
+  Scalar const *setMean(const Scalar *newxmean) {
     assert(state != SAMPLED && "setMean: mean cannot be set inbetween the calls"
                                "of samplePopulation and updateDistribution");
 

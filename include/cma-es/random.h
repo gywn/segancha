@@ -9,10 +9,10 @@
  */
 template <typename T> class Random {
   // variables for uniform()
-  long int startseed;
-  long int aktseed;
-  long int aktrand;
-  long int rgrand[32];
+  long startseed;
+  long aktseed;
+  long aktrand;
+  long rgrand[32];
   // variables for gauss()
   bool stored;
   T hold;
@@ -21,18 +21,18 @@ public:
   /**
    * @param seed use clock if 0
    */
-  Random(long unsigned seed = 0) : hold(0.0) {
+  Random(long seed = 0) : hold(0.0) {
     stored = false;
     if (seed < 1) {
-      long int t = 100 * time(0) + clock();
-      seed = (long unsigned)(t < 0 ? -t : t);
+      long t = 100 * time(0) + (long)clock();
+      seed = (long)(t < 0 ? -t : t);
     }
     start(seed);
   }
   /**
    * @param seed 0 == 1
    */
-  void start(long unsigned seed) {
+  void start(long seed) {
     stored = false;
     startseed = seed;
     if (seed < 1)

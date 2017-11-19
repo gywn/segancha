@@ -1,11 +1,25 @@
+#include <algorithm>
+#include <ostream>
 #include <vector>
 
-template <typename T> class LexiProduct {
-  using Product = std::vector<T>;
+/*
+support all compaison
+support minus
+LexiProduct(0) <= any lexi <= LexiProduct(std::numeric_limits<Scalar>::max())
+*/
+template <typename Scalar> class LexiProduct {
+  using Product = std::vector<Scalar>;
 
 public:
   LexiProduct() : LexiProduct(0) {}
-  LexiProduct(size_t size) : prd(size) {}
+  LexiProduct(Scalar val) : prd{val} {}
+  LexiProduct(const Product &prd2) : prd(prd2) {}
+  LexiProduct(Product &&prd2) : prd(std::move(prd2)) {}
+
+  LexiProduct &operator=(const Scalar value) {
+    prd = std::vector<Scalar>{value};
+    return *this;
+  }
   LexiProduct &operator=(const Product &prd2) {
     prd = prd2;
     return *this;
@@ -15,37 +29,57 @@ public:
     return *this;
   }
 
-  bool operator==(const LexiProduct<T> &lexi2) {
+  bool operator==(const LexiProduct<Scalar> &lexi2) const {
     return lexicmp(*this, lexi2) == 0;
   }
-  bool operator!=(const LexiProduct<T> &lexi2) {
+  bool operator!=(const LexiProduct<Scalar> &lexi2) const {
     return lexicmp(*this, lexi2) != 0;
   }
-  bool operator<(const LexiProduct<T> &lexi2) {
+  bool operator<(const LexiProduct<Scalar> &lexi2) const {
     return lexicmp(*this, lexi2) < 0;
   }
-  bool operator<=(const LexiProduct<T> &lexi2) {
+  bool operator<=(const LexiProduct<Scalar> &lexi2) const {
     return lexicmp(*this, lexi2) <= 0;
   }
-  bool operator>(const LexiProduct<T> &lexi2) {
+  bool operator>(const LexiProduct<Scalar> &lexi2) const {
     return lexicmp(*this, lexi2) > 0;
   }
-  bool operator>=(const LexiProduct<T> &lexi2) {
+  bool operator>=(const LexiProduct<Scalar> &lexi2) const {
     return lexicmp(*this, lexi2) >= 0;
+  }
+
+  LexiProduct<Scalar> operator-(const LexiProduct<Scalar> &lexi2) const {
+    const size_t n = std::min(this->prd.size(), lexi2.prd.size());
+    Product d(n);
+    for (size_t i = 0; i < n; ++i) {
+      d[i] = this->prd[i] - lexi2.prd[i];
+    }
+    return LexiProduct<Scalar>(std::move(d));
   }
 
 private:
   Product prd;
 
-  int lexicmp(const LexiProduct<T> &lhs, const LexiProduct<T> &rhs) {
-    const int lencmp = lhs.prd.size() - rhs.prd.size();
+  Scalar lexicmp(const LexiProduct<Scalar> &lhs,
+                 const LexiProduct<Scalar> &rhs) const {
+    const Scalar lencmp = (Scalar)(lhs.prd.size() - rhs.prd.size());
     const size_t n = (lencmp < 0 ? lhs : rhs).prd.size();
     for (size_t i = 0; i < n; ++i) {
-      const T d = lhs.prd[i] - rhs.prd[i];
+      const Scalar d = lhs.prd[i] - rhs.prd[i];
       if (d != 0) {
         return d;
       }
     }
     return lencmp;
+  }
+
+  friend std::ostream &operator<<(std::ostream &os, const LexiProduct &lexi) {
+    const size_t n = lexi.prd.size();
+    os << "[";
+    for (size_t i = 0; i < n - 1; ++i) {
+      os << lexi.prd[i] << ",";
+    }
+    os << lexi.prd[n - 1] << "]";
+    return os;
   }
 };

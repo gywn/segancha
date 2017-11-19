@@ -1,9 +1,11 @@
-#define _USE_MATH_DEFINES
 #include <cmath>
 #include <color.h>
 #include <constant.h>
 
 namespace color {
+double sgn(double val);
+constexpr inline double pow3(double x);
+
 double sgn(double val) { return (0. < val) - (val < 0.); }
 constexpr inline double pow3(double x) { return x * x * x; }
 

@@ -9,33 +9,37 @@
 #include <cmath>
 #include <string>
 
-template <typename T> T square(T d) { return d * d; }
+template <typename Scalar> inline Scalar square(Scalar d) { return d * d; }
 
-template <typename T> T maxElement(const T *rgd, int len) {
+template <typename Scalar>
+inline Scalar maxElement(const Scalar *rgd, size_t len) {
   return *std::max_element(rgd, rgd + len);
 }
 
-template <typename T> T minElement(const T *rgd, int len) {
+template <typename Scalar>
+inline Scalar minElement(const Scalar *rgd, size_t len) {
   return *std::min_element(rgd, rgd + len);
 }
 
-template <typename T> int maxIndex(const T *rgd, int len) {
-  return std::max_element(rgd, rgd + len) - rgd;
+template <typename Scalar>
+inline size_t maxIndex(const Scalar *rgd, size_t len) {
+  return (size_t)(std::max_element(rgd, rgd + len) - rgd);
 }
 
-template <typename T> int minIndex(const T *rgd, int len) {
-  return std::min_element(rgd, rgd + len) - rgd;
+template <typename Scalar>
+inline size_t minIndex(const Scalar *rgd, size_t len) {
+  return (size_t)(std::min_element(rgd, rgd + len) - rgd);
 }
 
 /** sqrt(a^2 + b^2) numerically stable. */
-template <typename T> T myhypot(T a, T b) {
-  const T fabsa = std::fabs(a), fabsb = std::fabs(b);
+template <typename Scalar> Scalar myhypot(Scalar a, Scalar b) {
+  const Scalar fabsa = std::fabs(a), fabsb = std::fabs(b);
   if (fabsa > fabsb) {
-    const T r = b / a;
-    return fabsa * std::sqrt(T(1) + r * r);
-  } else if (b != T(0)) {
-    const T r = a / b;
-    return fabsb * std::sqrt(T(1) + r * r);
+    const Scalar r = b / a;
+    return fabsa * std::sqrt(Scalar(1) + r * r);
+  } else if (b != Scalar(0)) {
+    const Scalar r = a / b;
+    return fabsb * std::sqrt(Scalar(1) + r * r);
   } else
-    return T(0);
+    return Scalar(0);
 }

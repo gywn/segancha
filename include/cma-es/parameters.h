@@ -7,48 +7,48 @@
 #include <stdexcept>
 #include <string>
 
-template <typename T> class CMAES;
+template <typename Scalar, typename Comparable> class CMAES;
 
 /**
  * @class Parameters
  * Holds all parameters that can be adjusted by the user.
  */
-template <typename T> class Parameters {
-  friend class CMAES<T>;
+template <typename Scalar, typename Comparable> class Parameters {
+  friend class CMAES<Scalar, Comparable>;
 
 public:
   /* Input parameters. */
   //! Problem dimension, must stay constant.
   int N;
   //! Initial search space vector.
-  T *xstart;
+  Scalar *xstart;
   //! A typical value for a search space vector.
-  T *typicalX;
+  Scalar *typicalX;
   //! Indicates that the typical x is the initial point.
   bool typicalXcase;
   //! Initial standard deviations.
-  T *rgInitialStds;
-  T *rgDiffMinChange;
+  Scalar *rgInitialStds;
+  Scalar *rgDiffMinChange;
 
   /* Termination parameters. */
   //! Maximal number of objective function evaluations.
-  T stopMaxFunEvals;
-  T facmaxeval;
+  Scalar stopMaxFunEvals;
+  Scalar facmaxeval;
   //! Maximal number of iterations.
-  T stopMaxIter;
+  Scalar stopMaxIter;
   //! Minimal fitness value. Only activated if flg is true.
   struct {
     bool flg;
-    T val;
+    Scalar val;
   } stStopFitness;
   //! Minimal value difference.
-  T stopTolFun;
+  Comparable stopTolFun;
   //! Minimal history value difference.
-  T stopTolFunHist;
+  Comparable stopTolFunHist;
   //! Minimal search space step size.
-  T stopTolX;
+  Scalar stopTolX;
   //! Defines the maximal condition number.
-  T stopTolUpXFactor;
+  Scalar stopTolUpXFactor;
 
   /* internal evolution strategy parameters */
   /**
@@ -60,37 +60,37 @@ public:
    * Number of individuals used to recompute the mean.
    */
   int mu;
-  T mucov;
+  Scalar mucov;
   /**
    * Variance effective selection mass, should be lambda/4.
    */
-  T mueff;
+  Scalar mueff;
   /**
    * Weights used to recombinate the mean sum up to one.
    */
-  T *weights;
+  Scalar *weights;
   /**
    * Damping parameter for step-size adaption, d = inifinity or 0 means adaption
    * is turned off, usually close to one.
    */
-  T damps;
+  Scalar damps;
   /**
    * cs^-1 (approx. n/3) is the backward time horizon for the evolution path
    * ps and larger than one.
    */
-  T cs;
-  T ccumcov;
+  Scalar cs;
+  Scalar ccumcov;
   /**
    * ccov^-1 (approx. n/4) is the backward time horizon for the evolution path
    * pc and larger than one.
    */
-  T ccov;
-  T diagonalCov;
+  Scalar ccov;
+  Scalar diagonalCov;
   struct {
-    T modulo;
-    T maxtime;
+    Scalar modulo;
+    Scalar maxtime;
   } updateCmode;
-  T facupdateCmode;
+  Scalar facupdateCmode;
 
   /**
    * Determines the method used to initialize the weights.
@@ -120,7 +120,7 @@ public:
         weightMode(UNINITIALIZED_WEIGHTS), resumefile(""), logWarnings(false),
         logStream(std::cerr) {
     stStopFitness.flg = false;
-    stStopFitness.val = -std::numeric_limits<T>::max();
+    stStopFitness.val = -std::numeric_limits<Scalar>::max();
     updateCmode.modulo = -1;
     updateCmode.maxtime = -1;
   }
@@ -150,18 +150,19 @@ public:
    *                  available, must be defined here or you have to set the
    *                  member manually.
    * @param inxstart Initial point in search space \f$x_0\f$, default (NULL) is
-   *                 \f$(0.5,\ldots,0.5)^T + N(0, initialStdDev^2) \in R^N\f$.
-   *                 This must be an array of size \f$N\f$.
+   *                 \f$(0.5,\ldots,0.5)^Scalar + N(0, initialStdDev^2) \in
+   * R^N\f$. This must be an array of size \f$N\f$.
    * @param inrgsigma Coordinatewise initial standard deviation of the sample
    *                  distribution (\f$\sigma \cdot \sqrt{C_{ii}} =
    *                  initialStdDev[i]\f$). The expected initial distance
    *                  between initialX and the optimum per coordinate should be
    *                  roughly initialStdDev. The entries should not differ by
    *                  several orders of magnitude. Default (NULL) is
-   *                  \f$(0.3,\ldots,0.3)^T \in R^N\f$. This must be an array of
-   *                  size \f$N\f$.
+   *                  \f$(0.3,\ldots,0.3)^Scalar \in R^N\f$. This must be an
+   * array of size \f$N\f$.
    */
-  void init(int dimension = 0, const T *inxstart = 0, const T *inrgsigma = 0) {
+  void init(int dimension = 0, const Scalar *inxstart = 0,
+            const Scalar *inrgsigma = 0) {
     if (logWarnings) {
       if (!(xstart || inxstart || typicalX))
         logStream << "Warning: initialX undefined. typicalX = 0.5...0.5."
@@ -182,7 +183,7 @@ public:
     diagonalCov = 0; // default is 0, but this might change in future
 
     if (!xstart) {
-      xstart = new T[N];
+      xstart = new Scalar[N];
       if (inxstart) {
         for (int i = 0; i < N; ++i)
           xstart[i] = inxstart[i];
@@ -198,13 +199,13 @@ public:
     }
 
     if (!rgInitialStds) {
-      rgInitialStds = new T[N];
+      rgInitialStds = new Scalar[N];
       if (inrgsigma) {
         for (int i = 0; i < N; ++i)
           rgInitialStds[i] = inrgsigma[i];
       } else {
         for (int i = 0; i < N; ++i)
-          rgInitialStds[i] = T(0.3);
+          rgInitialStds[i] = Scalar(0.3);
       }
     }
 
@@ -218,7 +219,7 @@ private:
     if (xstart)
       delete[] xstart;
     if (p.xstart) {
-      xstart = new T[N];
+      xstart = new Scalar[N];
       for (int i = 0; i < N; i++)
         xstart[i] = p.xstart[i];
     }
@@ -226,7 +227,7 @@ private:
     if (typicalX)
       delete[] typicalX;
     if (p.typicalX) {
-      typicalX = new T[N];
+      typicalX = new Scalar[N];
       for (int i = 0; i < N; i++)
         typicalX[i] = p.typicalX[i];
     }
@@ -236,7 +237,7 @@ private:
     if (rgInitialStds)
       delete[] rgInitialStds;
     if (p.rgInitialStds) {
-      rgInitialStds = new T[N];
+      rgInitialStds = new Scalar[N];
       for (int i = 0; i < N; i++)
         rgInitialStds[i] = p.rgInitialStds[i];
     }
@@ -244,7 +245,7 @@ private:
     if (rgDiffMinChange)
       delete[] rgDiffMinChange;
     if (p.rgDiffMinChange) {
-      rgDiffMinChange = new T[N];
+      rgDiffMinChange = new Scalar[N];
       for (int i = 0; i < N; i++)
         rgDiffMinChange[i] = p.rgDiffMinChange[i];
     }
@@ -269,7 +270,7 @@ private:
     if (weights)
       delete[] weights;
     if (p.weights) {
-      weights = new T[mu];
+      weights = new Scalar[mu];
       for (int i = 0; i < mu; i++)
         weights[i] = p.weights[i];
     }
@@ -294,25 +295,26 @@ private:
    * Supplements default parameter values.
    */
   void supplementDefaults() {
+    Scalar n = (Scalar)N;
     if (lambda < 2)
-      lambda = 4 + (int)(3.0 * log((double)N));
+      lambda = 4 + (int)(3.0 * log(n));
     if (mu <= 0)
       mu = lambda / 2;
     if (!weights)
       setWeights(weightMode);
 
     if (cs > 0)
-      cs *= (mueff + 2.) / (N + mueff + 3.);
+      cs *= (mueff + 2.) / (n + mueff + 3.);
     if (cs <= 0 || cs >= 1)
-      cs = (mueff + 2.) / (N + mueff + 3.);
+      cs = (mueff + 2.) / (n + mueff + 3.);
 
     if (ccumcov <= 0 || ccumcov > 1)
-      ccumcov = 4. / (N + 4);
+      ccumcov = 4. / (n + 4);
 
     if (mucov < 1)
       mucov = mueff;
-    T t1 = 2. / ((N + 1.4142) * (N + 1.4142));
-    T t2 = (2. * mueff - 1.) / ((N + 2.) * (N + 2.) + mueff);
+    Scalar t1 = 2. / ((n + 1.4142) * (n + 1.4142));
+    Scalar t2 = (2. * mueff - 1.) / ((n + 2.) * (n + 2.) + mueff);
     t2 = (t2 > 1) ? 1 : t2;
     t2 = (1. / mucov) * t1 + (1. - 1. / mucov) * t2;
     if (ccov >= 0)
@@ -321,31 +323,32 @@ private:
       ccov = t2;
 
     if (diagonalCov < 0)
-      diagonalCov = 2 + 100. * N / sqrt((double)lambda);
+      diagonalCov = 2 + 100. * n / sqrt((double)lambda);
 
     if (stopMaxFunEvals <= 0)
-      stopMaxFunEvals = facmaxeval * 900 * (N + 3) * (N + 3);
+      stopMaxFunEvals = facmaxeval * 900 * (n + 3) * (n + 3);
     else
       stopMaxFunEvals *= facmaxeval;
 
     if (stopMaxIter <= 0)
       stopMaxIter = ceil((double)(stopMaxFunEvals / lambda));
 
-    if (damps < T(0))
-      damps = T(1);
+    if (damps < Scalar(0))
+      damps = Scalar(1);
     damps = damps *
-                (T(1) +
-                 T(2) * std::max(T(0), std::sqrt((mueff - T(1)) / (N + T(1))) -
-                                           T(1))) *
-                (T)std::max(
-                    T(0.3),
-                    T(1) - // modify for short runs
-                        (T)N / (T(1e-6) + std::min(stopMaxIter,
-                                                   stopMaxFunEvals / lambda))) +
+                (Scalar(1) +
+                 Scalar(2) * std::max(Scalar(0), std::sqrt((mueff - Scalar(1)) /
+                                                           (n + Scalar(1))) -
+                                                     Scalar(1))) *
+                (Scalar)std::max(
+                    Scalar(0.3),
+                    Scalar(1) - // modify for short runs
+                        n / (Scalar(1e-6) +
+                             std::min(stopMaxIter, stopMaxFunEvals / lambda))) +
             cs;
 
     if (updateCmode.modulo < 0)
-      updateCmode.modulo = 1. / ccov / (double)N / 10.;
+      updateCmode.modulo = 1. / ccov / n / 10.;
     updateCmode.modulo *= facupdateCmode;
     if (updateCmode.maxtime < 0)
       updateCmode.maxtime = 0.20; // maximal 20% of CPU-time
@@ -357,7 +360,7 @@ private:
   void setWeights(Weights mode) {
     if (weights)
       delete[] weights;
-    weights = new T[mu];
+    weights = new Scalar[mu];
     switch (mode) {
     case LINEAR_WEIGHTS:
       for (int i = 0; i < mu; ++i)
@@ -375,7 +378,7 @@ private:
     }
 
     // normalize weights vector and set mueff
-    T s1 = 0, s2 = 0;
+    Scalar s1 = 0, s2 = 0;
     for (int i = 0; i < mu; ++i) {
       s1 += weights[i];
       s2 += weights[i] * weights[i];
