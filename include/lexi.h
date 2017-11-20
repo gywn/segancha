@@ -1,3 +1,6 @@
+#ifndef LEXI_PRODUCT_H_
+#define LEXI_PRODUCT_H_
+
 #include <algorithm>
 #include <ostream>
 #include <vector>
@@ -57,11 +60,15 @@ public:
     return LexiProduct<Scalar>(std::move(d));
   }
 
+  Scalar const &operator[](size_t i) const { return this->prd[i]; }
+
+  Scalar &operator[](size_t i) { return this->prd[i]; }
+
 private:
   Product prd;
 
-  Scalar lexicmp(const LexiProduct<Scalar> &lhs,
-                 const LexiProduct<Scalar> &rhs) const {
+  inline Scalar lexicmp(const LexiProduct<Scalar> &lhs,
+                        const LexiProduct<Scalar> &rhs) const {
     const Scalar lencmp = (Scalar)(lhs.prd.size() - rhs.prd.size());
     const size_t n = (lencmp < 0 ? lhs : rhs).prd.size();
     for (size_t i = 0; i < n; ++i) {
@@ -83,3 +90,5 @@ private:
     return os;
   }
 };
+
+#endif

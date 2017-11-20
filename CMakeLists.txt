@@ -3,6 +3,8 @@ cmake_minimum_required (VERSION 3.1)
 project(color)
 
 set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wconversion -Wno-unused-private-field -Wno-unused-variable -Wno-unused-parameter -fno-omit-frame-pointer -fsanitize=address")
+set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_STATIC_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wconversion -Wno-unused-private-field -Wno-unused-variable -Wno-unused-parameter")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
@@ -16,6 +18,12 @@ target_include_directories(color PUBLIC include PRIVATE ${PYTHON_INCLUDE_DIR} ${
 
 add_executable(testCIEDE2000 test/testCIEDE2000.cpp)
 target_link_libraries(testCIEDE2000 color)
+add_executable(testconversion test/testconversion.cpp)
+target_link_libraries(testconversion color)
+add_executable(testfitness test/testfitness.cpp)
+target_link_libraries(testfitness color)
+add_executable(testfitness2 test/testfitness2.cpp)
+target_link_libraries(testfitness2 color)
 
 add_executable(evo1 test/example1.cpp)
 target_link_libraries(evo1 color)

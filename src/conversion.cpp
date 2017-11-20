@@ -42,11 +42,4 @@ XYZ LABtoXYZ(const LAB &lab) {
 
 RGB LABtoRGB(const LAB &lab) { return XYZtoRGB(LABtoXYZ(lab)); }
 
-bool offRGB(const LAB &lab) {
-  const RGB rgb{LABtoRGB(lab)};
-
-  return rgb.r >= 0 && rgb.r <= 1 && rgb.g >= 0 && rgb.g <= 1 && rgb.b >= 0 &&
-         rgb.b <= 1;
-}
-
 } // namespace color

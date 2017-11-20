@@ -32,9 +32,9 @@ double f_diffpow(const std::vector<double> &x);
 double f_diffpowrot(const std::vector<double> &x);
 double f_gleichsys5(const std::vector<double> &x);
 
-double *optimize(double (*pFun)(const std::vector<double> &),
-                 int number_of_restarts,
-                 double increment_factor_for_population_size);
+std::vector<double> optimize(double (*pFun)(const std::vector<double> &),
+                             int number_of_restarts,
+                             double increment_factor_for_population_size);
 
 int main(int, char **) {
   typedef double (*pfun_t)(const std::vector<double> &);
@@ -42,7 +42,6 @@ int main(int, char **) {
   std::vector<pfun_t> rgpFun(
       maxTest); // vector (range) of pointer to objective function
   double incpopsize = 2;
-  double *x;
 
   // Put together objective functions
   rgpFun[0] = f_sphere;
@@ -71,11 +70,8 @@ int main(int, char **) {
     if (f == nullptr) {
       continue;
     }
-    x = optimize(f, nbrestarts, incpopsize);
+    const auto x = optimize(f, nbrestarts, incpopsize);
   }
-
-  // here we could utilize the solution x, and finally free memory
-  delete[] x;
 
   return 0;
 }
@@ -84,12 +80,12 @@ int main(int, char **) {
  * Somewhat extended interface for optimizing pFun with CMAES implementing a
  * restart procedure with increasing population size.
  */
-double *optimize(double (*pFun)(const std::vector<double> &), int nrestarts,
-                 double incpopsize) {
+std::vector<double> optimize(double (*pFun)(const std::vector<double> &),
+                             int nrestarts, double incpopsize) {
   CMAES<double> evo;               // the optimizer
   Individual<double, double> *pop; // sampled population
-  double *fitvals; // objective function values of sampled population
-  double fbestever = 0, *xbestever = NULL; // store best solution
+  double fbestever = 0;
+  std::vector<double> xbestever; // store best solution
   double fmean;
   int irun,
       lambda = 0,     // offspring population size, 0 invokes default
@@ -117,10 +113,11 @@ double *optimize(double (*pFun)(const std::vector<double> &), int nrestarts,
     parameters.lambda = lambda;
     parameters.init(dim, xstart, stddev);
 
-    fitvals = evo.init(parameters); // allocs fitvals
+    evo.init(parameters); // allocs fitvals
     std::cout << evo.sayHello() << std::endl;
     evo.countevals = countevals; // a hack, effects the output and termination
 
+    std::vector<double> fitvals((size_t)parameters.lambda);
     while (!evo.testForTermination()) {
       // Generate population of new candidate solutions
       pop = evo.samplePopulation(); // do not change content of pop
@@ -135,7 +132,7 @@ double *optimize(double (*pFun)(const std::vector<double> &), int nrestarts,
        */
 
       // Compute fitness value for each candidate solution
-      for (int i = 0; i < evo.get(CMAES<double, double>::PopSize); ++i) {
+      for (size_t i = 0; i < evo.get(CMAES<double, double>::PopSize); ++i) {
         /* You may resample the solution i until it lies within the
            feasible domain here, e.g. until it satisfies given
            box constraints (variable boundaries). The function
@@ -186,14 +183,15 @@ double *optimize(double (*pFun)(const std::vector<double> &), int nrestarts,
     if (irun == 0 ||
         evo.getValue(CMAES<double, double>::FBestEver) < fbestever) {
       fbestever = evo.getValue(CMAES<double, double>::FBestEver);
-      xbestever = evo.getInto(CMAES<double, double>::XBestEver,
-                              xbestever); // allocates memory if needed
+      xbestever = evo.getVector(
+          CMAES<double, double>::XBestEver); // allocates memory if needed
     }
     // best estimator for the optimum is xmean, therefore check
-    const std::vector<double> xmean = evo.getPtr(CMAES<double, double>::XMean);
+    const std::vector<double> xmean =
+        evo.getVector(CMAES<double, double>::XMean);
     if ((fmean = (*pFun)(xmean)) < fbestever) {
       fbestever = fmean;
-      xbestever = evo.getInto(CMAES<double, double>::XMean, xbestever);
+      xbestever = evo.getVector(CMAES<double, double>::XMean);
     }
 
     // abandon restarts if target fitness value was achieved or MaxFunEvals

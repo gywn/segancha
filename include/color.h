@@ -60,8 +60,6 @@ RGB XYZtoRGB(const XYZ &xyz);
 XYZ LABtoXYZ(const LAB &lab);
 RGB LABtoRGB(const LAB &lab);
 
-bool offRGB(const LAB &lab);
-
 } // namespace color
 
 std::ostream &operator<<(std::ostream &s, const color::LAB &labColor);

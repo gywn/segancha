@@ -106,9 +106,11 @@
 #include <fstream>
 #include <iomanip>
 #include <limits>
+#include <numeric>
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 /**
@@ -166,7 +168,7 @@ public:
   };
 
   /**
-   * Keys for getPtr().
+   * Keys for getVector().
    */
   enum GetVector {
     NoVector = 0,
@@ -247,7 +249,7 @@ private:
   //! Objective function values of the population.
   Ordered *functionValues;
   //!< Public objective function value array returned by init().
-  Ordered *publicFitness;
+  // Ordered *publicFitness;
 
   //! Generation number.
   size_t gen;
@@ -256,7 +258,9 @@ private:
 
   // repeatedly used for output
   Scalar maxdiagC;
+  size_t maxdiagCi;
   Scalar mindiagC;
+  size_t mindiagCi;
   Scalar maxEW;
   Scalar minEW;
 
@@ -274,14 +278,14 @@ private:
   time_t firstwritetime;
   time_t firstprinttime;
 
-  std::string
-      stopMessage; //!< A message that contains all matched stop criteria.
+  //! stopCriteria[].first: criterion satisfied, .second: message
+  std::vector<std::pair<bool, std::string>> stopCriteria;
 
-  std::string getTimeStr(void) {
-    time_t tm = time(0);
-    std::string timeStr(ctime(&tm));
-    return timeStr.substr(0, 24);
-  }
+  // std::string getTimeStr(void) {
+  //   time_t tm = time(0);
+  //   std::string timeStr(ctime(&tm));
+  //   return timeStr.substr(0, 24);
+  // }
 
   /**
    * Calculating eigenvalues and vectors.
@@ -376,11 +380,11 @@ private:
       if (tst1 < smallSDElement)
         tst1 = smallSDElement;
       const Scalar epsTst1 = eps * tst1;
-      int m = l;
-      while (m < n) {
+      int m = l - 1;
+      while (m < n - 1) {
+        ++m;
         if (std::fabs(e[m]) <= epsTst1)
           break;
-        m++;
       }
 
       // if m == l, d[l] is an eigenvalue, otherwise, iterate.
@@ -566,13 +570,14 @@ private:
 
   /**
    * Dirty index sort.
+   * @param col should support [] indexing
    */
-  template <typename LessThanComparable>
-  void sortIndex(const LessThanComparable *rgFunVal, size_t *iindex, size_t n) {
+  template <typename Collection>
+  void sortIndex(const Collection &col, size_t *iindex, size_t n) {
     size_t i, j;
     for (i = 1, iindex[0] = 0; i < n; ++i) {
       for (j = i; j > 0; --j) {
-        if (rgFunVal[iindex[j - 1]] < rgFunVal[i])
+        if (col[iindex[j - 1]] < col[i])
           break;
         iindex[j] = iindex[j - 1]; // shift up
       }
@@ -613,12 +618,15 @@ private:
         }
       // update maximal and minimal diagonal value
       maxdiagC = mindiagC = C[0][0];
-      for (int i = 1; i < N; ++i) {
+      for (size_t i = 1; i < N; ++i) {
         const Scalar &Cii = C[i][i];
-        if (maxdiagC < Cii)
+        if (maxdiagC < Cii) {
           maxdiagC = Cii;
-        else if (mindiagC > Cii)
+          maxdiagCi = i;
+        } else if (mindiagC > Cii) {
           mindiagC = Cii;
+          mindiagCi = i;
+        }
       }
     }
   }
@@ -841,26 +849,24 @@ public:
     }
     // for (int i = 0; i < params.lambda; ++i)
     //   delete[]-- population[i];
-    delete[] population;
     delete[] C;
     delete[] B;
     delete[] index;
-    delete[] publicFitness;
+    // delete[] publicFitness;
+    delete[] population;
     delete[] functionValues;
     delete[] funcValueHistory;
   }
 
   /**
-   * Initializes the CMA-ES algorithm.
+   * Allocate ressources and initializes the CMA-ES algorithm.
    * @param parameters The CMA-ES parameters.
-   * @return Array of size lambda that can be used to assign fitness values and
-   *         pass them to updateDistribution(). Not that after the desctructor
-   *         was called, the array is deleted.
    */
-  Ordered *init(const Parameters<Scalar, Ordered> &parameters) {
+  void init(const Parameters<Scalar, Ordered> &parameters) {
     params = parameters;
 
-    stopMessage = "";
+    stopCriteria.resize(10); // There are ten stop criteria
+    // stopMessage = "";
 
     Scalar trace(0);
     for (int i = 0; i < params.N; ++i)
@@ -881,8 +887,8 @@ public:
       if (dtest == dtest + Scalar(1))
         break;
     dMaxSignifKond =
-        dtest / Scalar(1000); // not sure whether this is really save,
-                              // 100 does not work well enough
+        dtest / Scalar(1e2); // not sure whether this is really save,
+                             // 100 does not work well enough
 
     gen = 0;
     countevals = 0;
@@ -912,7 +918,7 @@ public:
     rgD = new Scalar[params.N];
     C = new Scalar *[params.N];
     B = new Scalar *[params.N];
-    publicFitness = new Ordered[params.lambda];
+    // publicFitness = new Ordered[params.lambda];
     functionValues = new Ordered[params.lambda];
     // functionValues[0] = params.lambda;
     // ++functionValues;
@@ -982,20 +988,20 @@ public:
     if (params.resumefile != "")
       resumeDistribution(params.resumefile);
 
-    return publicFitness;
+    // return publicFitness;
   }
 
   /**
    * Well, says hello.
-   * @return eg. "(5,10)-CMA-ES(mu_eff=3.4), Ver="1.0alpha", dimension=9"
+   * @return eg. "CMA-ES-1.1alpha lambda=263, mu=131, mu_eff=68.6358,
+   * dimension=14, diagonalIterations=0"
    */
   std::string sayHello() {
     std::stringstream stream;
-    stream << "(" << params.mu << "," << params.lambda
-           << ")-CMA-ES(mu_eff=" << std::setprecision(1) << params.mueff
-           << "), Ver=\"" << version << "\", dimension=" << params.N
-           << ", diagonalIterations=" << (long)params.diagonalCov << " ("
-           << getTimeStr() << ")";
+    stream << "CMA-ES-" << version << " lambda=" << params.lambda
+           << ", mu=" << params.mu << ", mu_eff=" << params.mueff
+           << ", dimension=" << params.N
+           << ", diagonalIterations=" << (long)params.diagonalCov;
     return stream.str();
   }
 
@@ -1135,8 +1141,6 @@ public:
   }
 
   /**
-   * The search space vectors have a special form: they are arrays with N+1
-   * entries. Entry number -1 is the dimension of the search space N.
    * @return A pointer to a "population" of lambda N-dimensional multivariate
    * normally distributed samples.
    */
@@ -1262,18 +1266,19 @@ public:
    * Core procedure of the CMA-ES algorithm. Sets a new mean value and estimates
    * the new covariance matrix and a new step size for the normal search
    * distribution.
-   * @param fitnessValues An array of \f$\lambda\f$ function values.
+   * @param fitnessValues An iterable of \f$\lambda\f$ function values.
    * @return Mean value of the new distribution.
    */
-  Scalar *updateDistribution(const Ordered *fitnessValues) {
+  template <typename OrderedCollection>
+  Scalar *updateDistribution(const OrderedCollection &fitnessValues) {
     const int N = params.N;
     bool diag = params.diagonalCov == 1 || params.diagonalCov >= gen;
 
     assert(state != UPDATED &&
            "updateDistribution(): You need to call "
            "samplePopulation() before update can take place.");
-    assert(fitnessValues &&
-           "updateDistribution(): No fitness function value array input.");
+    // assert(fitnessValues &&
+    //        "updateDistribution(): No fitness function value array input.");
 
     if (state == SAMPLED) // function values are delivered here
       countevals += params.lambda;
@@ -1281,7 +1286,7 @@ public:
       params.logStream << "updateDistribution(): unexpected state" << std::endl;
 
     // assign function values
-    for (int i = 0; i < params.lambda; ++i) {
+    for (size_t i = 0; i < params.lambda; ++i) {
       // std::cout << i << ": " << fitnessValues[i] << std::endl;
       population[i].value = functionValues[i] = fitnessValues[i];
     }
@@ -1321,6 +1326,7 @@ public:
       // std::cout << xBestEver.value << " -> " << population[index[0]].value <<
       // std::endl;
       xBestEver = population[index[0]];
+      // std::cout << xBestEver.value << std::endl;
       evalsBestEver = countevals;
       // for (int i = 0; i < N; ++i) {
       //   // xBestEver.x[i] = population[index[0]].x[i]; /* TODO: use
@@ -1458,7 +1464,7 @@ public:
    *         overwritten during the next call to any member functions other
    *         than get().
    */
-  const std::vector<Scalar> getPtr(GetVector key) {
+  const std::vector<Scalar> getVector(GetVector key) {
     switch (key) {
     case DiagC: {
       std::vector<Scalar> o((size_t)params.N);
@@ -1481,7 +1487,7 @@ public:
     case XMean:
       return std::vector<Scalar>(xmean, xmean + params.N);
     default:
-      throw std::runtime_error("getPtr(): No match found for key");
+      throw std::runtime_error("getVector(): No match found for key");
     }
   }
 
@@ -1492,7 +1498,7 @@ public:
    *         writing access to its elements. The memory must be explicitly
    *         released using delete[].
    */
-  Scalar *getNew(GetVector key) { return getInto(key, 0); }
+  // Scalar *getNew(GetVector key) { return getInto(key, nullptr); }
 
   /**
    * Request a vector parameter from CMA-ES.
@@ -1501,14 +1507,14 @@ public:
    *            written into. For mem == NULL new memory is allocated as with
    *            calling getNew() and must be released by the user at some point.
    */
-  Scalar *getInto(GetVector key, Scalar *res) {
-    const std::vector<Scalar> res0 = getPtr(key);
-    if (!res)
-      res = new Scalar[params.N];
-    for (size_t i = 0; i < params.N; ++i)
-      res[i] = res0[i];
-    return res;
-  }
+  // Scalar *getInto(GetVector key, Scalar *res) {
+  //   const std::vector<Scalar> res0 = getVector(key);
+  //   if (!res)
+  //     res = new Scalar[params.N];
+  //   for (size_t i = 0; i < params.N; ++i)
+  //     res[i] = res0[i];
+  //   return res;
+  // }
 
   /**
    * Some stopping criteria can be set in initials.par, with names starting
@@ -1518,125 +1524,205 @@ public:
    * that contains the matched stop criteria via getStopMessage().
    * @return Does any stop criterion match?
    */
-  bool testForTermination() {
+  bool testForTermination(bool makeMessage = false) {
     Ordered range;
     Scalar fac;
     int iAchse, iKoo;
     int diag = params.diagonalCov == 1 || params.diagonalCov >= gen;
     int N = params.N;
-    std::stringstream message;
+    // std::stringstream message;
 
-    if (stopMessage != "") {
-      message << stopMessage << std::endl;
-    }
+    // if (stopMessage != "") {
+    //   message << stopMessage << std::endl;
+    // }
 
-    // function value reached
-    if ((gen > 1 || state > SAMPLED) && params.stStopFitness.flg &&
-        functionValues[index[0]] <= params.stStopFitness.val) {
-      message << "Fitness: function value " << functionValues[index[0]]
-              << " <= stopFitness (" << params.stStopFitness.val << ")"
-              << std::endl;
-    }
-
-    // TolFun
-    range = std::max(maxElement(funcValueHistory,
-                                std::min((size_t)gen, historySize)),
-                     maxElement(functionValues, (size_t)params.lambda)) -
-            std::min(minElement(funcValueHistory,
-                                std::min((size_t)gen, historySize)),
-                     minElement(functionValues, (size_t)params.lambda));
-
-    if (gen > 0 && range <= params.stopTolFun) {
-      message << "TolFun: function value differences " << range
-              << " < stopTolFun=" << params.stopTolFun << std::endl;
-    }
-
-    // TolFunHist
-    if (gen > historySize) {
-      range = maxElement(funcValueHistory, historySize) -
-              minElement(funcValueHistory, historySize);
-      if (range <= params.stopTolFunHist)
-        message << "TolFunHist: history of function value changes " << range
-                << " stopTolFunHist=" << params.stopTolFunHist << std::endl;
-    }
-
-    // TolX
-    int cTemp = 0;
-    for (int i = 0; i < N; ++i) {
-      cTemp += (sigma * std::sqrt(C[i][i]) < params.stopTolX) ? 1 : 0;
-      cTemp += (sigma * pc[i] < params.stopTolX) ? 1 : 0;
-    }
-    if (cTemp == 2 * N) {
-      message << "TolX: object variable changes below " << params.stopTolX
-              << std::endl;
-    }
-
-    // TolUpX
-    for (int i = 0; i < N; ++i) {
-      if (sigma * std::sqrt(C[i][i]) >
-          params.stopTolUpXFactor * params.rgInitialStds[i]) {
-        message << "TolUpX: standard deviation increased by more than "
-                << params.stopTolUpXFactor
-                << ", larger initial standard deviation recommended."
-                << std::endl;
-        break;
+    // 0. function value reached
+    {
+      stopCriteria[0].first =
+          (gen > 1 || state > SAMPLED) && params.stStopFitness.flg &&
+          functionValues[index[0]] <= params.stStopFitness.val;
+      if (stopCriteria[0].first || makeMessage) {
+        std::stringstream message;
+        message << "Fitness: function value " << functionValues[index[0]]
+                << " <= stopFitness (" << params.stStopFitness.val << ")";
+        stopCriteria[0].second = message.str();
       }
     }
 
-    // Condition of C greater than dMaxSignifKond
-    if (maxEW >= minEW * dMaxSignifKond) {
-      message << "ConditionNumber: maximal condition number " << dMaxSignifKond
-              << " reached. maxEW=" << maxEW << ",minEW=" << minEW
-              << ",maxdiagC=" << maxdiagC << ",mindiagC=" << mindiagC
-              << std::endl;
+    // 1. TolFun
+    {
+      range = std::max(maxElement(funcValueHistory,
+                                  std::min((size_t)gen, historySize)),
+                       maxElement(functionValues, (size_t)params.lambda)) -
+              std::min(minElement(funcValueHistory,
+                                  std::min((size_t)gen, historySize)),
+                       minElement(functionValues, (size_t)params.lambda));
+
+      stopCriteria[1].first = gen > 0 && range <= params.stopTolFun;
+      if (stopCriteria[1].first || makeMessage) {
+        std::stringstream message;
+        message << "TolFun: function value differences " << range
+                << " < stopTolFun=" << params.stopTolFun;
+        stopCriteria[1].second = message.str();
+      }
     }
 
-    // Principal axis i has no effect on xmean, ie. x == x + 0.1* sigma* rgD[i]*
-    // B[i]
-    if (!diag) {
-      for (iAchse = 0; iAchse < N; ++iAchse) {
-        fac = 0.1 * sigma * rgD[iAchse];
-        for (iKoo = 0; iKoo < N; ++iKoo) {
-          if (xmean[iKoo] != xmean[iKoo] + fac * B[iKoo][iAchse])
-            break;
-        }
-        if (iKoo == N) {
-          message << "NoEffectAxis: standard deviation 0.1*" << (fac / 0.1)
-                  << " in principal axis " << iAchse << " without effect"
-                  << std::endl;
+    // 2. TolFunHist
+    {
+      if (gen > historySize) {
+        range = maxElement(funcValueHistory, historySize) -
+                minElement(funcValueHistory, historySize);
+        if (range <= params.stopTolFunHist)
+          stopCriteria[2].first = true;
+      } else {
+        stopCriteria[2].first = false;
+      }
+      if (stopCriteria[2].first || makeMessage) {
+        std::stringstream message;
+        message << "TolFunHist: history of function value changes " << range
+                << " stopTolFunHist=" << params.stopTolFunHist;
+        stopCriteria[2].second = message.str();
+      }
+    }
+
+    // 3. TolX
+    {
+      int cTemp = 0;
+      for (int i = 0; i < N; ++i) {
+        cTemp += (sigma * std::sqrt(C[i][i]) < params.stopTolX) ? 1 : 0;
+        cTemp += (sigma * pc[i] < params.stopTolX) ? 1 : 0;
+      }
+      stopCriteria[3].first = cTemp == 2 * N;
+      if (stopCriteria[3].first || makeMessage) {
+        std::stringstream message;
+        message << "TolX: object variable changes below " << params.stopTolX;
+        stopCriteria[3].second = message.str();
+      }
+    }
+
+    // 4. TolUpX
+    {
+      stopCriteria[4].first = false;
+      for (int i = 0; i < N; ++i) {
+        if (sigma * std::sqrt(C[i][i]) >
+            params.stopTolUpXFactor * params.rgInitialStds[i]) {
+          stopCriteria[4].first = true;
           break;
         }
       }
-    }
-    // Component of xmean is not changed anymore
-    for (iKoo = 0; iKoo < N; ++iKoo) {
-      if (xmean[iKoo] ==
-          xmean[iKoo] + sigma * std::sqrt(C[iKoo][iKoo]) / Scalar(5)) {
-        message << "NoEffectCoordinate: standard deviation 0.2*"
-                << (sigma * std::sqrt(C[iKoo][iKoo])) << " in coordinate "
-                << iKoo << " without effect" << std::endl;
-        break;
+      if (stopCriteria[4].first || makeMessage) {
+        std::stringstream message;
+        message << "TolUpX: standard deviation increased by more than "
+                << params.stopTolUpXFactor
+                << ", larger initial standard deviation recommended.";
+        stopCriteria[4].second = message.str();
       }
     }
 
-    if (countevals >= params.stopMaxFunEvals) {
-      message << "MaxFunEvals: conducted function evaluations " << countevals
-              << " >= " << params.stopMaxFunEvals << std::endl;
-    }
-    if (gen >= params.stopMaxIter) {
-      message << "MaxIter: number of iterations " << gen
-              << " >= " << params.stopMaxIter << std::endl;
+    // 5. Condition of C greater than dMaxSignifKond
+    {
+      stopCriteria[5].first = maxEW >= minEW * dMaxSignifKond;
+      if (stopCriteria[5].first || makeMessage) {
+        std::stringstream message;
+        message << "ConditionNumber: maximal condition number "
+                << dMaxSignifKond << " reached. maxEW=" << maxEW
+                << ",minEW=" << minEW << ",maxdiagC=" << maxdiagC
+                << ",maxdiagCi=" << maxdiagCi << ",mindiagC=" << mindiagC
+                << ",mindiagCi=" << mindiagCi;
+        stopCriteria[5].second = message.str();
+      }
     }
 
-    stopMessage = message.str();
-    return stopMessage != "";
+    // 6. Principal axis i has no effect on xmean, ie. x == x + 0.1* sigma*
+    // rgD[i]* B[i]
+    {
+      if (!diag) {
+        std::vector<std::pair<double, int>> no_effect;
+        for (iAchse = 0; iAchse < N; ++iAchse) {
+          fac = 0.1 * sigma * rgD[iAchse];
+          for (iKoo = 0; iKoo < N; ++iKoo) {
+            if (xmean[iKoo] != xmean[iKoo] + fac * B[iKoo][iAchse])
+              break;
+          }
+          if (iKoo == N) {
+            stopCriteria[6].first = true;
+            no_effect.emplace_back(fac / 0.1, iAchse);
+            break;
+          }
+        }
+        if (stopCriteria[6].first || makeMessage) {
+          std::stringstream message;
+          message << "NoEffectAxis: ";
+          for (const auto &p : no_effect)
+            message << "[axis " << p.second << " std dev 0.1*" << p.first
+                    << "] ";
+          stopCriteria[6].second = message.str();
+        }
+      }
+    }
+
+    // 7. Component of xmean is not changed anymore
+    {
+      for (iKoo = 0; iKoo < N; ++iKoo) {
+        if (xmean[iKoo] ==
+            xmean[iKoo] + sigma * std::sqrt(C[iKoo][iKoo]) / Scalar(5)) {
+          stopCriteria[7].first = true;
+          break;
+        }
+      }
+      if (stopCriteria[7].first) {
+        std::stringstream message;
+        message << "NoEffectCoordinate: standard deviation 0.2*"
+                << (sigma * std::sqrt(C[iKoo][iKoo])) << " in coordinate "
+                << iKoo << " without effect";
+        stopCriteria[7].second = message.str();
+      } else if (makeMessage) {
+        std::stringstream message;
+        message << "NoEffectCoordinate: (empty)";
+        stopCriteria[7].second = message.str();
+      }
+    }
+
+    // 8. Maximum function evaluations counts is reached
+    {
+      stopCriteria[8].first = countevals >= params.stopMaxFunEvals;
+      if (stopCriteria[8].first || makeMessage) {
+        std::stringstream message;
+        message << "MaxFunEvals: conducted function evaluations " << countevals
+                << " >= " << params.stopMaxFunEvals;
+        stopCriteria[8].second = message.str();
+      }
+    }
+
+    // 9. Maximum generation counts is reached
+    {
+      stopCriteria[9].first = gen >= params.stopMaxIter;
+      if (stopCriteria[9].first || makeMessage) {
+        std::stringstream message;
+        message << "MaxIter: number of iterations " << gen
+                << " >= " << params.stopMaxIter;
+        stopCriteria[9].second = message.str();
+      }
+    }
+
+    return std::accumulate(
+        stopCriteria.begin(), stopCriteria.end(), false,
+        [](bool accu, const std::pair<bool, std::string> crit) {
+          return accu || crit.first;
+        });
   }
 
   /**
    * A message that contains a detailed description of the matched stop
    * criteria.
    */
-  std::string getStopMessage() { return stopMessage; }
+  std::string getStopMessage() {
+    testForTermination(true); /* generate all messages */
+    std::stringstream message;
+    for (const std::pair<bool, std::string> &p : stopCriteria)
+      message << "[" << (p.first ? "x" : " ") << "] " << p.second << std::endl;
+    return message.str();
+  }
 
   /**
    * @param filename Output file name.

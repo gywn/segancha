@@ -28,9 +28,7 @@ Y fitfun(const std::vector<double> &x, int N) {
  */
 int main(int, char **) {
   CMAES<double, Y> evo;
-  Y *arFunvals;
   Individual<double, Y> *pop;
-  double *xfinal;
 
   // Initialize everything
   const int dim = 22;
@@ -45,10 +43,11 @@ int main(int, char **) {
   parameters.stopTolFunHist = std::vector<double>{0, 1e-13};
   // TODO Adjust parameters here
   parameters.init(dim, xstart, stddev);
-  arFunvals = evo.init(parameters);
+  evo.init(parameters);
 
   std::cout << evo.sayHello() << std::endl;
 
+  std::vector<Y> arFunvals((size_t)parameters.lambda);
   // Iterate until stop criterion holds
   while (!evo.testForTermination()) {
     // Generate lambda new search points, sample population
@@ -69,7 +68,7 @@ int main(int, char **) {
     */
 
     // evaluate the new search points using fitfun from above
-    for (int i = 0; i < evo.get(CMAES<double, Y>::Lambda); ++i)
+    for (size_t i = 0; i < evo.get(CMAES<double, Y>::Lambda); ++i)
       arFunvals[i] =
           fitfun(pop[i].x, (int)evo.get(CMAES<double, Y>::Dimension));
 
@@ -85,13 +84,12 @@ int main(int, char **) {
                   "resumeevo1.dat"); // write resumable state of CMA-ES
 
   // get best estimator for the optimum, xmean
-  xfinal = evo.getNew(CMAES<double, Y>::XMean); // "XBestEver"
-                                                // might be
-                                                // used as
-                                                // well
+  const auto xfinal = evo.getVector(CMAES<double, Y>::XMean); // "XBestEver"
+                                                              // might be
+                                                              // used as
+                                                              // well
 
   // do something with final solution and finally release memory
-  delete[] xfinal;
 
   return 0;
 }
