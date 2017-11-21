@@ -64,9 +64,19 @@ public:
 
   Scalar &operator[](size_t i) { return this->prd[i]; }
 
-private:
+  friend std::ostream &operator<<(std::ostream &os, const LexiProduct &lexi) {
+    const size_t n = lexi.prd.size();
+    os << "[";
+    for (size_t i = 0; i < n - 1; ++i) {
+      os << lexi.prd[i] << ",";
+    }
+    os << lexi.prd[n - 1] << "]";
+    return os;
+  }
+
   Product prd;
 
+private:
   inline Scalar lexicmp(const LexiProduct<Scalar> &lhs,
                         const LexiProduct<Scalar> &rhs) const {
     const Scalar lencmp = (Scalar)(lhs.prd.size() - rhs.prd.size());
@@ -78,16 +88,6 @@ private:
       }
     }
     return lencmp;
-  }
-
-  friend std::ostream &operator<<(std::ostream &os, const LexiProduct &lexi) {
-    const size_t n = lexi.prd.size();
-    os << "[";
-    for (size_t i = 0; i < n - 1; ++i) {
-      os << lexi.prd[i] << ",";
-    }
-    os << lexi.prd[n - 1] << "]";
-    return os;
   }
 };
 

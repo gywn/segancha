@@ -43,11 +43,16 @@ int testcolor() {
 
   check(offRGB(color::LAB{200, 0, 0}), 2.147648383, "offRGB");
 
-  check(fitnessFunc(50, std::vector<double>{0, 0, 10, 10, -10, 10, -10, -10, 10, -10})[0],
-  -12.8001, "fitnessFunc");
+  check(fitnessFunc(std::vector<color::LAB>{{50, 0, 0},
+                                            {50, 10, 10},
+                                            {50, -10, 10},
+                                            {50, -10, -10},
+                                            {50, 10, -10}})[0],
+        -12.8001, "fitnessFunc");
 
-  check(fitnessFunc(50, std::vector<double>{-200, -200, +200, +200})[0],
-  1626.445599, "fitnessFunc (off boundary)");
+  check(
+      fitnessFunc(std::vector<color::LAB>{{50, -200, -200}, {50, 200, 200}})[0],
+      1626.445599, "fitnessFunc (off boundary)");
 
   std::cout << std::endl;
   int ret = EXIT_SUCCESS;

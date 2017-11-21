@@ -1524,7 +1524,7 @@ public:
    * that contains the matched stop criteria via getStopMessage().
    * @return Does any stop criterion match?
    */
-  bool testForTermination(bool makeMessage = false) {
+  unsigned long testForTermination(bool makeMessage = false) {
     Ordered range;
     Scalar fac;
     int iAchse, iKoo;
@@ -1658,6 +1658,8 @@ public:
                     << "] ";
           stopCriteria[6].second = message.str();
         }
+      } else if (makeMessage) {
+        stopCriteria[6].second = "NoEffectAxis: (empty)";
       }
     }
 
@@ -1677,9 +1679,7 @@ public:
                 << iKoo << " without effect";
         stopCriteria[7].second = message.str();
       } else if (makeMessage) {
-        std::stringstream message;
-        message << "NoEffectCoordinate: (empty)";
-        stopCriteria[7].second = message.str();
+        stopCriteria[7].second = "NoEffectCoordinate: (empty)";
       }
     }
 
@@ -1705,11 +1705,12 @@ public:
       }
     }
 
-    return std::accumulate(
-        stopCriteria.begin(), stopCriteria.end(), false,
-        [](bool accu, const std::pair<bool, std::string> crit) {
-          return accu || crit.first;
-        });
+    size_t crit_n = stopCriteria.size();
+    unsigned long flags = 0;
+    for (size_t i = 0; i < crit_n; ++i) {
+      flags |= (unsigned long)stopCriteria[i].first << i;
+    }
+    return flags;
   }
 
   /**
