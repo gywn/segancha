@@ -1,5 +1,4 @@
-#ifndef LEXI_PRODUCT_H_
-#define LEXI_PRODUCT_H_
+#pragma once
 
 #include <algorithm>
 #include <ostream>
@@ -90,5 +89,3 @@ private:
     return lencmp;
   }
 };
-
-#endif

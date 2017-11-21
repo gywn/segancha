@@ -5,11 +5,10 @@
  */
 
 #include <cmath>
+#include <color.h>
 #include <iostream>
 #include <string>
 #include <vector>
-
-#include <color.h>
 
 /**
  * @brief

@@ -1,5 +1,4 @@
-#ifndef ICC_CONSTANT_H_
-#define ICC_CONSTANT_H_
+#pragma once
 
 namespace color {
 /* ICC's PCS illuminant */
@@ -18,5 +17,3 @@ const double A31 = -0.03269638;
 const double A32 = -0.18259425;
 const double A33 = 1.4716528;
 } // namespace color
-
-#endif /* ICC_CONSTANT_H_ */

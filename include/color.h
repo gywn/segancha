@@ -4,8 +4,7 @@
  * See LICENSE for details.
  */
 
-#ifndef GPF_COLOR_H_
-#define GPF_COLOR_H_
+#pragma once
 
 #include <ostream>
 
@@ -62,8 +61,6 @@ RGB LABtoRGB(const LAB &lab);
 
 } // namespace color
 
-std::ostream &operator<<(std::ostream &s, const color::LAB &labColor);
-std::ostream &operator<<(std::ostream &s, const color::XYZ &labColor);
-std::ostream &operator<<(std::ostream &s, const color::RGB &labColor);
-
-#endif /* GPF_COLOR_H_ */
+std::ostream &operator<<(std::ostream &s, const color::LAB &lab);
+std::ostream &operator<<(std::ostream &s, const color::XYZ &xyz);
+std::ostream &operator<<(std::ostream &s, const color::RGB &rgb);

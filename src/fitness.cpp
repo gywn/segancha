@@ -36,7 +36,7 @@ LexiProduct<double> fitnessFunc(const std::vector<color::LAB> &lab) {
   }
 
   // number of combinations between colors, except the last two
-  size_t K = M * (M - 1) / 2 - 1; 
+  size_t K = M * (M - 1) / 2 - 1;
   static size_t cached_K = 0;
   static std::vector<size_t> cached_ref; /* for almost-sorted O(n) sorting */
   static std::vector<std::pair<size_t, size_t>> ref_combi;
@@ -87,6 +87,17 @@ void fill_lab(const std::vector<double> &x, std::vector<color::LAB> &lab,
   }
 }
 
+std::ostream &operator<<(std::ostream &os, const PerceptionResult &res) {
+  os << "{" << std::endl << "  flags: " << res.flags << std::endl;
+  os << "  L: " << res.L << std::endl;
+  os << "  rgb: [" << std::endl;
+  for (const auto &rgb : res.rgb)
+    os << "    " << rgb << std::endl;
+  os << "  ]" << std::endl;
+  os << "  fitness: " << res.fitness << std::endl << "}";
+  return os;
+}
+
 /*
  * @param foreground
  * @param background
@@ -133,11 +144,12 @@ PerceptionResult perceptionL(color::LAB foreground, color::LAB background,
 
   const auto xfinal = evo.getVector(CMAES<double, LexiProduct<double>>::XMean);
   fill_lab(xfinal, lab, M);
-  std::sort(lab.begin(), lab.begin() + (long)M, [](const color::LAB &c1, const color::LAB &c2) {
-    const double h1 = std::atan2(-c1.b, -c1.a);
-    const double h2 = std::atan2(-c2.b, -c2.a);
-    return h1 < h2;
-  });
+  std::sort(lab.begin(), lab.begin() + (long)M,
+            [](const color::LAB &c1, const color::LAB &c2) {
+              const double h1 = std::atan2(-c1.b, -c1.a);
+              const double h2 = std::atan2(-c2.b, -c2.a);
+              return h1 < h2;
+            });
   auto fitness = evo.getValue(CMAES<double, LexiProduct<double>>::FBestEver);
 
   if (!quiet)

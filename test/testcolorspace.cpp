@@ -5,11 +5,10 @@
  */
 
 #include <cmath>
+#include <color.h>
 #include <iostream>
 #include <string>
 #include <vector>
-
-#include <color.h>
 
 static size_t line = 0;
 static std::vector<bool> passFail;

@@ -1,16 +1,10 @@
-/*
- * testcolor.cpp
- * Part of http://github.com/gfiumara/color by Gregory Fiumara.
- * See LICENSE for details.
- */
-
 #include <cmath>
+#include <color.h>
+#include <fitness.h>
+#include <iomanip>
 #include <iostream>
 #include <string>
 #include <vector>
-
-#include <color.h>
-#include <fitness.h>
 
 static size_t line = 0;
 static std::vector<bool> passFail;
@@ -23,6 +17,7 @@ void check(bool res, const std::string &msg) {
 }
 
 void check(double a, double b, const std::string &msg, double delta = 1e-3) {
+  // std::cout << std::setprecision(10) << a << " " << b << std::endl;
   check(std::abs(a - b) < delta, msg);
 }
 
@@ -50,9 +45,9 @@ int testcolor() {
                                             {50, 10, -10}})[0],
         -12.8001, "fitnessFunc");
 
-  check(
-      fitnessFunc(std::vector<color::LAB>{{50, -200, -200}, {50, 200, 200}})[0],
-      1626.445599, "fitnessFunc (off boundary)");
+  check(fitnessFunc(std::vector<color::LAB>{
+            {50, -200, -200}, {50, 200, 200}, {50, 0, 0}, {50, 0, 0}})[0],
+        3337.715201, "fitnessFunc (off boundary)");
 
   std::cout << std::endl;
   int ret = EXIT_SUCCESS;
