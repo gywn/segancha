@@ -111,7 +111,7 @@ static PyMethodDef methods[] = {
     {nullptr, nullptr, 0, nullptr}};
 
 static struct PyModuleDef module = {
-    PyModuleDef_HEAD_INIT, "pyperception",
+    PyModuleDef_HEAD_INIT, "perception",
     "Python interface for perception colors library", -1, methods};
 
-PyMODINIT_FUNC PyInit_pyperception(void) { return PyModule_Create(&module); }
+PyMODINIT_FUNC PyInit_perception(void) { return PyModule_Create(&module); }
