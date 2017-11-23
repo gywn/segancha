@@ -1707,9 +1707,8 @@ public:
 
     size_t crit_n = stopCriteria.size();
     unsigned long flags = 0;
-    for (size_t i = 0; i < crit_n; ++i) {
+    for (size_t i = 0; i < crit_n; ++i)
       flags |= (unsigned long)stopCriteria[i].first << i;
-    }
     return flags;
   }
 

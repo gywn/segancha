@@ -8,12 +8,10 @@
 #include <utility>
 
 inline double offRange(double x, double a, double b) {
-  if (x < a) {
+  if (x < a)
     return a - x;
-  }
-  if (x > b) {
+  if (x > b)
     return x - b;
-  }
   return 0;
 }
 
@@ -26,33 +24,40 @@ double offRGB(const color::LAB &lab) {
   return std::sqrt(dr * dr + dg * dg + db * db);
 }
 
-LexiProduct<double> fitnessFunc(const std::vector<color::LAB> &lab) {
-  // number of colors
-  size_t M = lab.size();
-  std::vector<double> penalty(M);
-  for (size_t i = 0; i < M; ++i) {
-    penalty[i] =
-        offRGB(lab[i]) * 300 * M; /* 300 is the approx. diameter of ab-plane */
-  }
+class Combination {
+public:
+  size_t i;
+  size_t j;
+};
 
-  // number of combinations between colors, except the last two
-  size_t K = M * (M - 1) / 2 - 1;
+LexiProduct<double> fitnessFunc(const std::vector<color::LAB> &lab, size_t M) {
+  size_t totalM = lab.size();
+  std::vector<double> penalty(totalM);
+  if (M == 0)
+    M = totalM;
+  for (size_t i = 0; i < M; ++i)
+    // 300 is the approx. diameter of ab-plane
+    penalty[i] = offRGB(lab[i]) * 300 * totalM;
+
+  // number of combinations between free/fixed colors
+  size_t K = (M * (2 * totalM - M - 1)) / 2;
   static size_t cached_K = 0;
+  static size_t cached_M = 0;
   static std::vector<size_t> cached_ref; /* for almost-sorted O(n) sorting */
-  static std::vector<std::pair<size_t, size_t>> ref_combi;
+  static std::vector<Combination> ref_combi;
 
   // Cache combination order
-  if (cached_K != K) {
+  if (!(cached_K == K && cached_M == M)) {
     cached_K = K;
+    cached_M = M;
     cached_ref.resize(K);
-    for (size_t i = 0; i < K; ++i) {
+    for (size_t i = 0; i < K; ++i)
       cached_ref[i] = i;
-    }
     ref_combi.resize(K);
     size_t combi_i = 0;
-    for (size_t i = 0; i < M - 2; ++i) {
-      for (size_t j = i + 1; j < M; ++j) {
-        ref_combi[combi_i] = std::pair<size_t, size_t>(i, j);
+    for (size_t i = 0; i < M; ++i) {
+      for (size_t j = i + 1; j < totalM; ++j) {
+        ref_combi[combi_i] = Combination{i, j};
         ++combi_i;
       }
     }
@@ -61,10 +66,10 @@ LexiProduct<double> fitnessFunc(const std::vector<color::LAB> &lab) {
   std::vector<std::pair<double, size_t>> fitness_ref(K);
   for (size_t i = 0; i < K; ++i) {
     const auto ref = cached_ref[i];
-    const auto &refs = ref_combi[ref];
+    const auto &combi = ref_combi[ref];
     fitness_ref[i] = std::pair<double, size_t>(
-        penalty[refs.first] + penalty[refs.second] -
-            color::CIEDE2000(lab[refs.first], lab[refs.second]),
+        penalty[combi.i] + penalty[combi.j] -
+            color::CIEDE2000(lab[combi.i], lab[combi.j]),
         ref);
   }
   std::sort(
@@ -80,11 +85,10 @@ LexiProduct<double> fitnessFunc(const std::vector<color::LAB> &lab) {
   return LexiProduct<double>(std::move(fitness));
 }
 
-void fill_lab(const std::vector<double> &x, std::vector<color::LAB> &lab,
-              size_t M) {
-  for (size_t j = 0; j < M; ++j) {
-    lab[j] = color::LAB{x[2 * M], x[2 * j], x[2 * j + 1]};
-  }
+void fill_lab(const std::vector<double> &x, double L,
+              std::vector<color::LAB> &lab, size_t M) {
+  for (size_t j = 0; j < M; ++j)
+    lab[j] = color::LAB{L, x[2 * j], x[2 * j + 1]};
 }
 
 std::ostream &operator<<(std::ostream &os, const PerceptionResult &res) {
@@ -98,24 +102,33 @@ std::ostream &operator<<(std::ostream &os, const PerceptionResult &res) {
   return os;
 }
 
-/*
- * @param foreground
- * @param background
- * @param M numbers of colors
- * @param quiet write info to stdout
- * @return PerceptionResult
- */
-PerceptionResult perceptionL(color::LAB foreground, color::LAB background,
-                             size_t M, bool quiet) {
+PerceptionResult perception(size_t M, double L,
+                            std::vector<color::LAB> const *fixed, bool quiet) {
+  bool freeL = L < 0;
+  bool noFixed = fixed == nullptr || fixed->size() == 0;
+  size_t fixedM = fixed == nullptr ? 0 : fixed->size();
+
   CMAES<double, LexiProduct<double>> evo;
   Individual<double, LexiProduct<double>> *pop;
 
-  const size_t N = M * 2 + 1; //!< number of variables
+  const size_t N = M * 2 + freeL; //!< number of variables
   std::vector<double> xstart(N);
-  const double initL = (foreground.l + background.l) / 2.;
+  const double initL = noFixed
+                           ? 50
+                           : accumulate(fixed->begin(), fixed->end(), 0,
+                                        [](double accu, const color::LAB &c) {
+                                          return accu + c.l;
+                                        }) /
+                                 (double)fixedM;
   std::vector<double> stddev(N, std::min(100. - initL, initL));
-  xstart[2 * M] = initL; // luminocity
-  stddev[2 * M] = 100.;  // luminocity
+  if (freeL) {
+    xstart[2 * M] = initL;
+    stddev[2 * M] = 100.;
+  }
+
+  if (!quiet)
+    std::cout << "freeM=" << M << ", fixedM=" << fixedM << ", initL=" << initL
+              << std::endl;
 
   Parameters<double, LexiProduct<double>> parameters;
   parameters.lambda = (int)(300. * log(N)); /* 100x default */
@@ -127,23 +140,23 @@ PerceptionResult perceptionL(color::LAB foreground, color::LAB background,
   if (!quiet)
     std::cout << evo.sayHello() << std::endl;
 
-  std::vector<color::LAB> lab(M + 2);
-  lab[M] = foreground;
-  lab[M + 1] = background;
+  std::vector<color::LAB> lab(M + fixedM);
+  if (!noFixed)
+    std::copy(fixed->begin(), fixed->end(), lab.begin() + (long)M);
 
   std::vector<LexiProduct<double>> populationFitness((size_t)parameters.lambda);
   unsigned long flags = 0;
   while (!(flags = evo.testForTermination())) {
     pop = evo.samplePopulation(); // Do not change content of pop
     for (size_t i = 0; i < parameters.lambda; ++i) {
-      fill_lab(pop[i].x, lab, M);
-      populationFitness[i] = fitnessFunc(lab);
+      fill_lab(pop[i].x, freeL ? pop[i].x[2 * M] : L, lab, M);
+      populationFitness[i] = fitnessFunc(lab, M);
     }
     evo.updateDistribution(populationFitness);
   }
 
   const auto xfinal = evo.getVector(CMAES<double, LexiProduct<double>>::XMean);
-  fill_lab(xfinal, lab, M);
+  fill_lab(xfinal, freeL ? xfinal[2 * M] : L, lab, M);
   std::sort(lab.begin(), lab.begin() + (long)M,
             [](const color::LAB &c1, const color::LAB &c2) {
               const double h1 = std::atan2(-c1.b, -c1.a);
@@ -156,10 +169,9 @@ PerceptionResult perceptionL(color::LAB foreground, color::LAB background,
     std::cout << "Stop: flags " << flags << std::endl << evo.getStopMessage();
 
   std::vector<color::RGB> rgb(M);
-  for (size_t i = 0; i < M; ++i) {
+  for (size_t i = 0; i < M; ++i)
     rgb[i] = color::LABtoRGB(lab[i]);
-  }
 
-  return PerceptionResult{flags, xfinal[2 * M], std::move(rgb),
+  return PerceptionResult{flags, freeL ? xfinal[2 * M] : L, std::move(rgb),
                           std::move(fitness)};
 }

@@ -45,9 +45,9 @@ int testcolor() {
                                             {50, 10, -10}})[0],
         -12.8001, "fitnessFunc");
 
-  check(fitnessFunc(std::vector<color::LAB>{
-            {50, -200, -200}, {50, 200, 200}, {50, 0, 0}, {50, 0, 0}})[0],
-        3337.715201, "fitnessFunc (off boundary)");
+  check(
+      fitnessFunc(std::vector<color::LAB>{{50, -200, -200}, {50, 200, 200}})[0],
+      1626.445599, "fitnessFunc (off boundary)");
 
   std::cout << std::endl;
   int ret = EXIT_SUCCESS;

@@ -1,8 +1,9 @@
-*.dll
-*.so
-*.dylib
-*.o
 *.dSYM
-build/
 *.dat
+*.dll
+*.dylib
+*.ipynb
+*.o
+*.so
 .vscode/
+build/

@@ -14,9 +14,8 @@ unsigned compress(double x, unsigned max = 256) {
 
 int main(int argc, char *argv[]) {
   const size_t M = 7;
-  const color::LAB foreground{0, 0., 0.};
-  const color::LAB background{100, 0., 0.};
-  const auto result = perceptionL(foreground, background, M);
+  const std::vector<color::LAB> fixed{{0, 0, 0}, {90, 0, 0}};
+  const auto result = perception(M, -1, &fixed);
   std::cout << result << std::endl;
 
   // Write a HTML demo

@@ -66,9 +66,8 @@ public:
   friend std::ostream &operator<<(std::ostream &os, const LexiProduct &lexi) {
     const size_t n = lexi.prd.size();
     os << "[";
-    for (size_t i = 0; i < n - 1; ++i) {
+    for (size_t i = 0; i < n - 1; ++i)
       os << lexi.prd[i] << ",";
-    }
     os << lexi.prd[n - 1] << "]";
     return os;
   }
@@ -82,9 +81,8 @@ private:
     const size_t n = (lencmp < 0 ? lhs : rhs).prd.size();
     for (size_t i = 0; i < n; ++i) {
       const Scalar d = lhs.prd[i] - rhs.prd[i];
-      if (d != 0) {
+      if (d != 0)
         return d;
-      }
     }
     return lencmp;
   }
