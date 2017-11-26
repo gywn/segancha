@@ -12,15 +12,14 @@ set(LIB_SOURCES src/colorspace.cpp src/CIEDE2000.cpp src/fitness.cpp)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 find_package(PythonLibsNew REQUIRED)  # -DPYTHON_EXECUTABLE should be set
 
-if(NOT CMAKE_BUILD_TYPE MATCHES "Debug")
 
-    add_library(perception MODULE ${LIB_SOURCES} src/python.cpp) 
-    target_link_libraries(perception ${PYTHON_LIBRARIES})
-    target_include_directories(perception PRIVATE include ${PYTHON_INCLUDE_DIR})
-    set_target_properties(perception PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}")
-    set_target_properties(perception PROPERTIES SUFFIX "${PYTHON_MODULE_EXTENSION}")
+add_library(native MODULE ${LIB_SOURCES} src/python.cpp) 
+target_link_libraries(native ${PYTHON_LIBRARIES})
+target_include_directories(native PRIVATE include ${PYTHON_INCLUDE_DIR})
+set_target_properties(native PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}")
+set_target_properties(native PROPERTIES SUFFIX "${PYTHON_MODULE_EXTENSION}")
 
-else(NOT CMAKE_BUILD_TYPE MATCHES "Debug")
+if(CMAKE_BUILD_TYPE MATCHES "Debug")
 
     add_library(perception SHARED ${LIB_SOURCES}) 
     target_include_directories(perception PUBLIC include)
@@ -42,4 +41,4 @@ else(NOT CMAKE_BUILD_TYPE MATCHES "Debug")
     add_executable(testfitness2 test/testfitness2.cpp)
     target_link_libraries(testfitness2 perception)
 
-endif(NOT CMAKE_BUILD_TYPE MATCHES "Debug")
+endif(CMAKE_BUILD_TYPE MATCHES "Debug")

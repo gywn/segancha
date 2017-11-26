@@ -42,6 +42,17 @@ XYZ LABtoXYZ(const LAB &lab) {
 
 RGB LABtoRGB(const LAB &lab) { return XYZtoRGB(LABtoXYZ(lab)); }
 
+CMY RGBtoCMY(const RGB &rgb) {
+  const double cr = 1 - rgb.r;
+  const double cg = 1 - rgb.g;
+  const double cb = 1 - rgb.b;
+  double c = cr * B11 + cg * B12 + cb * B13;
+  double m = cr * B21 + cg * B22 + cb * B23;
+  double y = cr * B31 + cg * B32 + cb * B33;
+
+  return CMY{c, m, y};
+}
+
 } // namespace color
 
 std::ostream &operator<<(std::ostream &s, const color::LAB &lab) {
@@ -54,4 +65,8 @@ std::ostream &operator<<(std::ostream &s, const color::XYZ &xyz) {
 
 std::ostream &operator<<(std::ostream &s, const color::RGB &rgb) {
   return (s << "RGB(" << rgb.r << "," << rgb.g << "," << rgb.b << ")");
+}
+
+std::ostream &operator<<(std::ostream &s, const color::CMY &cmy) {
+  return (s << "CMY(" << cmy.c << "," << cmy.m << "," << cmy.y << ")");
 }

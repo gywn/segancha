@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import glob
 import multiprocessing
 import os
 import subprocess
@@ -41,9 +42,26 @@ class CMakeBuild(build_ext):
             ['cmake', '--build', '.'] + build_args, cwd=self.build_temp)
 
 
+with open('python/version.py') as f:
+    exec(f.read())
+
 setup(
     name='perception',
-    version='0.0.1',
+    version=__version__,  # noqa: F821
     description='Perception colors model',
-    ext_modules=[CMakeExtension('perception')],
+    install_requires=['pystache'],
+    packages=['perception'],
+    package_dir={'perception': 'python'},
+    ext_modules=[CMakeExtension('perception.native')],
+    package_data={
+        'perception': [
+            os.path.relpath(p, 'python')
+            for p in glob.glob('python/data/**', recursive=True)
+        ]
+    },
+    entry_points={
+        'console_scripts': [
+            'perception-theme = perception:main',
+        ]
+    },
     cmdclass=dict(build_ext=CMakeBuild))

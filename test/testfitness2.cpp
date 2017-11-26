@@ -15,8 +15,10 @@ unsigned compress(double x, unsigned max = 256) {
 int main(int argc, char *argv[]) {
   const size_t M = 7;
   const std::vector<color::LAB> fixed{{0, 0, 0}, {90, 0, 0}};
-  const auto result = perception(M, -1, &fixed);
-  std::cout << result << std::endl;
+  for (const auto L : std::vector<double>{-1, 30, 60}) {
+    const auto result = perception(M, L, 100, &fixed);
+    std::cout << result << std::endl;
+  }
 
   // Write a HTML demo
   // const color::RGB frgb(color::LABtoRGB(foreground));

@@ -2,8 +2,10 @@
 *.dat
 *.dll
 *.dylib
+*.egg-info/
 *.ipynb
 *.o
 *.so
 .vscode/
 build/
+dist/

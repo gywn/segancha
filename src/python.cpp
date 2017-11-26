@@ -39,15 +39,17 @@ static PyObject *pyperception(PyObject *self, PyObject *args, PyObject *kw) {
   // color::LAB fg, bg;
   unsigned long M;
   double L = -1;
+  double maxC = -1;
   PyObject *fixed_pyo = nullptr;
   bool quiet = false;
 
   static char kw1[] = "M";
   static char kw2[] = "L";
-  static char kw3[] = "fixed";
-  static char kw4[] = "quiet";
-  static char *kwlist[] = {kw1, kw2, kw3, kw4};
-  if (!PyArg_ParseTupleAndKeywords(args, kw, "k|dOp", kwlist, &M, &L,
+  static char kw3[] = "maxC";
+  static char kw4[] = "fixed";
+  static char kw5[] = "quiet";
+  static char *kwlist[] = {kw1, kw2, kw3, kw4, kw5, nullptr};
+  if (!PyArg_ParseTupleAndKeywords(args, kw, "k|ddOp", kwlist, &M, &L, &maxC,
                                    &fixed_pyo, &quiet))
     return nullptr;
 
@@ -76,13 +78,17 @@ static PyObject *pyperception(PyObject *self, PyObject *args, PyObject *kw) {
         return nullptr;
     }
   }
-  if (!quiet) {
-    for (const auto &lab : fixed)
-      std::cout << lab << " ";
-    std::cout << std::endl;
-  }
 
-  const auto result = perception(M, L, &fixed, quiet);
+  // if (!quiet) {
+  //   for (const auto &lab : fixed)
+  //     std::cout << lab << " ";
+  //   std::cout << std::endl;
+  // }
+
+  const auto result = perception(M, L, maxC, &fixed, quiet);
+  PyObj lab = PyObj(PyList_New(0));
+  for (const auto &c : result.lab)
+    PyList_Append(lab.ptr, PyObj(Py_BuildValue("(ddd)", c.l, c.a, c.b)).ptr);
   PyObj rgb = PyObj(PyList_New(0));
   for (const auto &c : result.rgb)
     PyList_Append(rgb.ptr, PyObj(Py_BuildValue("(ddd)", c.r, c.g, c.b)).ptr);
@@ -90,8 +96,9 @@ static PyObject *pyperception(PyObject *self, PyObject *args, PyObject *kw) {
   for (const auto d : result.fitness.prd)
     PyList_Append(fitness.ptr, PyObj(PyFloat_FromDouble(d)).ptr);
 
-  return Py_BuildValue("{sksdsOsO}", "flags", result.flags, "L", result.L,
-                       "rgb", rgb.ptr, "fitness", fitness.ptr);
+  return Py_BuildValue("{sksdsdsOsOsO}", "flags", result.flags, "L", result.L,
+                       "maxC", result.maxC, "lab", lab.ptr, "rgb", rgb.ptr,
+                       "fitness", fitness.ptr);
 }
 
 static PyMethodDef methods[] = {
@@ -100,7 +107,8 @@ static PyMethodDef methods[] = {
      "--------------------------------------\n"
      "\n"
      "@param M number of colors\n"
-     "@param L=-1 luminocity, < 0 for optimized value\n"
+     "@param L=-1 luminocity, < 0 for no constraint\n"
+     "@param maxC=-1 maximal distance, < 0 for no constraint\n"
      "@param fixed=None iterable of (l, a, b)\n"
      "@param quiet=False print messages to stdout"},
     {"LABtoRGB", LABtoRGB, METH_VARARGS,
@@ -114,4 +122,4 @@ static struct PyModuleDef module = {
     PyModuleDef_HEAD_INIT, "perception",
     "Python interface for perception colors library", -1, methods};
 
-PyMODINIT_FUNC PyInit_perception(void) { return PyModule_Create(&module); }
+PyMODINIT_FUNC PyInit_native(void) { return PyModule_Create(&module); }

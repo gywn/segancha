@@ -15,13 +15,23 @@ inline double offRange(double x, double a, double b) {
   return 0;
 }
 
-double offRGB(const color::LAB &lab) {
+inline double offRGB(const color::LAB &lab) {
   const color::RGB rgb{color::LABtoRGB(lab)};
   const auto dr = offRange(rgb.r, 0, 1);
   const auto dg = offRange(rgb.g, 0, 1);
   const auto db = offRange(rgb.b, 0, 1);
+  const color::CMY cmy{color::RGBtoCMY(rgb)};
+  const auto dc = offRange(cmy.c, 0, std::numeric_limits<double>::max());
+  const auto dm = offRange(cmy.m, 0, std::numeric_limits<double>::max());
+  const auto dy = offRange(cmy.y, 0, std::numeric_limits<double>::max());
 
-  return std::sqrt(dr * dr + dg * dg + db * db);
+  return std::sqrt(dr * dr + dg * dg + db * db + dc * dc + dm * dm + dy * dy);
+}
+
+inline double offChroma(const color::LAB &lab, double C) {
+  if (C < 0)
+    return 0;
+  return offRange(std::sqrt(lab.a * lab.a + lab.b * lab.b), 0, C);
 }
 
 class Combination {
@@ -30,14 +40,15 @@ public:
   size_t j;
 };
 
-LexiProduct<double> fitnessFunc(const std::vector<color::LAB> &lab, size_t M) {
+LexiProduct<double> fitnessFunc(const std::vector<color::LAB> &lab, size_t M,
+                                double maxC) {
   size_t totalM = lab.size();
   std::vector<double> penalty(totalM);
   if (M == 0)
     M = totalM;
   for (size_t i = 0; i < M; ++i)
     // 300 is the approx. diameter of ab-plane
-    penalty[i] = offRGB(lab[i]) * 300 * totalM;
+    penalty[i] = (offRGB(lab[i]) * 300 + offChroma(lab[i], maxC)) * totalM;
 
   // number of combinations between free/fixed colors
   size_t K = (M * (2 * totalM - M - 1)) / 2;
@@ -67,10 +78,11 @@ LexiProduct<double> fitnessFunc(const std::vector<color::LAB> &lab, size_t M) {
   for (size_t i = 0; i < K; ++i) {
     const auto ref = cached_ref[i];
     const auto &combi = ref_combi[ref];
+    const auto DE = color::CIEDE2000(lab[combi.i], lab[combi.j]);
+    // const double penaltyDE = (maxDE > 0 && DE > maxDE ? totalM * (DE - maxDE)
+    // : 0);
     fitness_ref[i] = std::pair<double, size_t>(
-        penalty[combi.i] + penalty[combi.j] -
-            color::CIEDE2000(lab[combi.i], lab[combi.j]),
-        ref);
+        penalty[combi.i] + penalty[combi.j] /* + penaltyDE */ - DE, ref);
   }
   std::sort(
       fitness_ref.begin(), fitness_ref.end(),
@@ -102,7 +114,7 @@ std::ostream &operator<<(std::ostream &os, const PerceptionResult &res) {
   return os;
 }
 
-PerceptionResult perception(size_t M, double L,
+PerceptionResult perception(size_t M, double L, double maxC,
                             std::vector<color::LAB> const *fixed, bool quiet) {
   bool freeL = L < 0;
   bool noFixed = fixed == nullptr || fixed->size() == 0;
@@ -120,7 +132,7 @@ PerceptionResult perception(size_t M, double L,
                                           return accu + c.l;
                                         }) /
                                  (double)fixedM;
-  std::vector<double> stddev(N, std::min(100. - initL, initL));
+  std::vector<double> stddev(N, std::max(std::min(100. - initL, initL), 1.));
   if (freeL) {
     xstart[2 * M] = initL;
     stddev[2 * M] = 100.;
@@ -128,7 +140,7 @@ PerceptionResult perception(size_t M, double L,
 
   if (!quiet)
     std::cout << "freeM=" << M << ", fixedM=" << fixedM << ", initL=" << initL
-              << std::endl;
+              << ", maxC=" << maxC << std::endl;
 
   Parameters<double, LexiProduct<double>> parameters;
   parameters.lambda = (int)(300. * log(N)); /* 100x default */
@@ -150,7 +162,7 @@ PerceptionResult perception(size_t M, double L,
     pop = evo.samplePopulation(); // Do not change content of pop
     for (size_t i = 0; i < parameters.lambda; ++i) {
       fill_lab(pop[i].x, freeL ? pop[i].x[2 * M] : L, lab, M);
-      populationFitness[i] = fitnessFunc(lab, M);
+      populationFitness[i] = fitnessFunc(lab, M, maxC);
     }
     evo.updateDistribution(populationFitness);
   }
@@ -169,9 +181,14 @@ PerceptionResult perception(size_t M, double L,
     std::cout << "Stop: flags " << flags << std::endl << evo.getStopMessage();
 
   std::vector<color::RGB> rgb(M);
-  for (size_t i = 0; i < M; ++i)
+  double finalMaxC = 0;
+  for (size_t i = 0; i < M; ++i) {
+    finalMaxC =
+        std::max(finalMaxC, sqrt(lab[i].a * lab[i].a + lab[i].b * lab[i].b));
     rgb[i] = color::LABtoRGB(lab[i]);
+  }
 
-  return PerceptionResult{flags, freeL ? xfinal[2 * M] : L, std::move(rgb),
-                          std::move(fitness)};
+  return PerceptionResult{flags,          freeL ? xfinal[2 * M] : L,
+                          finalMaxC,      std::move(lab),
+                          std::move(rgb), std::move(fitness)};
 }

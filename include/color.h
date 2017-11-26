@@ -33,6 +33,13 @@ struct RGB {
 };
 using RGB = struct RGB;
 
+struct CMY {
+  double c;
+  double m;
+  double y;
+};
+using CMY = struct CMY;
+
 /**
  * @brief
  * Obtain Delta-E 2000 value.
@@ -58,9 +65,11 @@ constexpr double rad2Deg(const double rad);
 RGB XYZtoRGB(const XYZ &xyz);
 XYZ LABtoXYZ(const LAB &lab);
 RGB LABtoRGB(const LAB &lab);
+CMY RGBtoCMY(const RGB &rgb);
 
 } // namespace color
 
 std::ostream &operator<<(std::ostream &s, const color::LAB &lab);
 std::ostream &operator<<(std::ostream &s, const color::XYZ &xyz);
 std::ostream &operator<<(std::ostream &s, const color::RGB &rgb);
+std::ostream &operator<<(std::ostream &s, const color::CMY &rgb);
