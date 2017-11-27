@@ -61,7 +61,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'perception-theme = perception:main',
+            'perception-theme = perception.theme:main',
         ]
     },
     cmdclass=dict(build_ext=CMakeBuild))
