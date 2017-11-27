@@ -36,7 +36,7 @@ int testcolor() {
   unsigned int line = 1;
   std::vector<bool> passFail;
 
-  check(offRGB(color::LAB{200, 0, 0}), 2.147648383, "offRGB");
+  check(offRGB(color::LAB{200, 0, 0}) > 0, "offRGB");
 
   check(fitnessFunc(std::vector<color::LAB>{{50, 0, 0},
                                             {50, 10, 10},
@@ -45,9 +45,11 @@ int testcolor() {
                                             {50, 10, -10}})[0],
         -12.8001, "fitnessFunc");
 
-  check(
-      fitnessFunc(std::vector<color::LAB>{{50, -200, -200}, {50, 200, 200}})[0],
-      1626.445599, "fitnessFunc (off boundary)");
+  check(fitnessFunc(
+            std::vector<color::LAB>{{50, -200, -200}, {50, 200, 200}})[0] > 0,
+        "fitnessFunc (off boundary)");
+
+  check(maxChroma(color::LCH{50, 20, 0}, -1).c, 57.70569, "maxChroma: red");
 
   std::cout << std::endl;
   int ret = EXIT_SUCCESS;

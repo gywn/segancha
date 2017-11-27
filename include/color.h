@@ -17,6 +17,14 @@ struct LAB {
 };
 using LAB = struct LAB;
 
+/** A color in LCH colorspace */
+struct LCH {
+  double l;
+  double c;
+  double h;
+};
+using LCH = struct LCH;
+
 /** A color in CIEXYZ colorspace */
 struct XYZ {
   double x;
@@ -33,6 +41,7 @@ struct RGB {
 };
 using RGB = struct RGB;
 
+/** A color in CMY colorspace */
 struct CMY {
   double c;
   double m;
@@ -59,17 +68,31 @@ using CMY = struct CMY;
  */
 double CIEDE2000(const LAB &lab1, const LAB &lab2);
 
-constexpr double deg2Rad(const double deg);
-constexpr double rad2Deg(const double rad);
+constexpr double deg2Rad(const double deg) { return (deg * (M_PI / 180.0)); }
+constexpr double rad2Deg(const double rad) { return ((180.0 / M_PI) * rad); }
 
 RGB XYZtoRGB(const XYZ &xyz);
 XYZ LABtoXYZ(const LAB &lab);
-RGB LABtoRGB(const LAB &lab);
 CMY RGBtoCMY(const RGB &rgb);
+
+inline RGB LABtoRGB(const LAB &lab) { return XYZtoRGB(LABtoXYZ(lab)); }
+
+inline LCH LABtoLCH(const LAB &lab) {
+  double theta = atan2(lab.b, lab.a);
+  if (theta < 0)
+    theta += 2 * M_PI;
+  return LCH{lab.l, sqrt(lab.a * lab.a + lab.b * lab.b), color::rad2Deg(theta)};
+}
+
+inline LAB LCHtoLAB(const LCH &lch) {
+  const double theta = color::deg2Rad(lch.h);
+  return LAB{lch.l, lch.c * cos(theta), lch.c * sin(theta)};
+}
 
 } // namespace color
 
 std::ostream &operator<<(std::ostream &s, const color::LAB &lab);
+std::ostream &operator<<(std::ostream &s, const color::LCH &lch);
 std::ostream &operator<<(std::ostream &s, const color::XYZ &xyz);
 std::ostream &operator<<(std::ostream &s, const color::RGB &rgb);
 std::ostream &operator<<(std::ostream &s, const color::CMY &rgb);

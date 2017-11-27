@@ -8,8 +8,10 @@
 inline double offRange(double x, double a, double b);
 
 double offRGB(const color::LAB &lab);
+double offRGB(const color::LCH &lch);
 
 double offChroma(const color::LAB &lab, double C);
+double offChroma(const color::LCH &lch, double C);
 
 /**
  * @param lab a vector of color::LAB, inter-distances of lab[freeM:] are ignored
@@ -20,8 +22,7 @@ double offChroma(const color::LAB &lab, double C);
 LexiProduct<double> fitnessFunc(const std::vector<color::LAB> &lab,
                                 size_t M = 0, double maxC = -1.);
 
-class PerceptionResult {
-public:
+struct PerceptionResult {
   unsigned long flags;
   double L;
   double maxC;
@@ -29,6 +30,7 @@ public:
   std::vector<color::RGB> rgb;
   LexiProduct<double> fitness;
 };
+using PerceptionResult = struct PerceptionResult;
 
 std::ostream &operator<<(std::ostream &os, const PerceptionResult &res);
 
@@ -43,3 +45,5 @@ std::ostream &operator<<(std::ostream &os, const PerceptionResult &res);
 PerceptionResult perception(size_t M, double L = -1, double maxC = -1,
                             std::vector<color::LAB> const *fixed = nullptr,
                             bool quiet = false);
+
+color::LCH maxChroma(const color::LCH &lch, double maxC = -1);

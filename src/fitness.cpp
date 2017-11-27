@@ -28,17 +28,25 @@ inline double offRGB(const color::LAB &lab) {
   return std::sqrt(dr * dr + dg * dg + db * db + dc * dc + dm * dm + dy * dy);
 }
 
+inline double offRGB(const color::LCH &lch) { return offRGB(LCHtoLAB(lch)); }
+
 inline double offChroma(const color::LAB &lab, double C) {
   if (C < 0)
     return 0;
   return offRange(std::sqrt(lab.a * lab.a + lab.b * lab.b), 0, C);
 }
 
-class Combination {
-public:
+inline double offChroma(const color::LCH &lch, double C) {
+  if (C < 0)
+    return 0;
+  return offRange(lch.c, 0, C);
+}
+
+struct Combination {
   size_t i;
   size_t j;
 };
+using Combination = struct Combination;
 
 LexiProduct<double> fitnessFunc(const std::vector<color::LAB> &lab, size_t M,
                                 double maxC) {
@@ -191,4 +199,15 @@ PerceptionResult perception(size_t M, double L, double maxC,
   return PerceptionResult{flags,          freeL ? xfinal[2 * M] : L,
                           finalMaxC,      std::move(lab),
                           std::move(rgb), std::move(fitness)};
+}
+
+color::LCH maxChroma(const color::LCH &lch, double maxC) {
+  color::LCH inner{lch.l, 0, lch.h}, outer = lch;
+  while (offRGB(outer) == 0 && offChroma(outer, maxC) == 0)
+    outer.c = 2 * outer.c + 1;
+  while (abs(outer.c - inner.c) > 1e-13) {
+    color::LCH m{lch.l, (inner.c + outer.c) / 2., lch.h};
+    (offRGB(m) == 0 && offChroma(m, maxC) == 0 ? inner : outer) = m;
+  }
+  return inner;
 }

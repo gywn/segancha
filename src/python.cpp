@@ -35,6 +35,26 @@ static PyObject *LABtoRGB(PyObject *self, PyObject *args) {
   return Py_BuildValue("(ddd)", rgb.r, rgb.g, rgb.b);
 }
 
+static PyObject *LABtoLCH(PyObject *self, PyObject *args) {
+  color::LAB lab;
+
+  if (!PyArg_ParseTuple(args, "(ddd)", &lab.l, &lab.a, &lab.b))
+    return nullptr;
+
+  const auto lch = color::LABtoLCH(lab);
+  return Py_BuildValue("(ddd)", lch.l, lch.c, lch.h);
+}
+
+static PyObject *LCHtoLAB(PyObject *self, PyObject *args) {
+  color::LCH lch;
+
+  if (!PyArg_ParseTuple(args, "(ddd)", &lch.l, &lch.c, &lch.h))
+    return nullptr;
+
+  const auto lab = color::LCHtoLAB(lch);
+  return Py_BuildValue("(ddd)", lab.l, lab.a, lab.b);
+}
+
 static PyObject *pyperception(PyObject *self, PyObject *args, PyObject *kw) {
   // color::LAB fg, bg;
   unsigned long M;
@@ -101,6 +121,21 @@ static PyObject *pyperception(PyObject *self, PyObject *args, PyObject *kw) {
                        "fitness", fitness.ptr);
 }
 
+static PyObject *pymaxChroma(PyObject *self, PyObject *args, PyObject *kw) {
+  color::LCH lch;
+  double maxC = -1;
+
+  static char kw1[] = "";
+  static char kw2[] = "maxC";
+  static char *kwlist[] = {kw1, kw2, nullptr};
+  if (!PyArg_ParseTupleAndKeywords(args, kw, "(ddd)|d", kwlist, &lch.l, &lch.c,
+                                   &lch.h, &maxC))
+    return nullptr;
+
+  const auto lch2 = maxChroma(lch, maxC);
+  return Py_BuildValue("(ddd)", lch2.l, lch2.c, lch2.h);
+}
+
 static PyMethodDef methods[] = {
     {"perception", (PyCFunction)pyperception, METH_VARARGS | METH_KEYWORDS,
      "perception colors anchored by N colors\n"
@@ -108,14 +143,35 @@ static PyMethodDef methods[] = {
      "\n"
      "@param M number of colors\n"
      "@param L=-1 luminocity, < 0 for no constraint\n"
-     "@param maxC=-1 maximal distance, < 0 for no constraint\n"
+     "@param maxC=-1 maximal chroma, < 0 for no constraint\n"
      "@param fixed=None iterable of (l, a, b)\n"
      "@param quiet=False print messages to stdout"},
+
+    {"maxChroma", (PyCFunction)pymaxChroma, METH_VARARGS | METH_KEYWORDS,
+     "find the color with maximal chroma\n"
+     "----------------------------------\n"
+     "\n"
+     "@param (l, c, h) color in LCH space\n"
+     "@param maxC=-1 maximal chroma, < 0 for no constraint"},
+
     {"LABtoRGB", LABtoRGB, METH_VARARGS,
      "convert LAB to RGB\n"
      "------------------\n"
      "\n"
      "@param lab (l,a,b)\n"},
+
+    {"LABtoLCH", LABtoLCH, METH_VARARGS,
+     "convert LAB to LCH\n"
+     "------------------\n"
+     "\n"
+     "@param lab (l,a,b)\n"},
+
+    {"LCHtoLAB", LCHtoLAB, METH_VARARGS,
+     "convert LCH to LAB\n"
+     "------------------\n"
+     "\n"
+     "@param lch (l,c,h)\n"},
+
     {nullptr, nullptr, 0, nullptr}};
 
 static struct PyModuleDef module = {

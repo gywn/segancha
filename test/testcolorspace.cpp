@@ -20,6 +20,11 @@ void check(bool res, std::string msg) {
   ++line;
 }
 
+void check(double a, double b, const std::string &msg, double delta = 1e-3) {
+  // std::cout << std::setprecision(10) << a << " " << b << std::endl;
+  check(std::abs(a - b) < delta, msg);
+}
+
 /**
  * @brief
  * Run the test dataset run from the color paper.
@@ -60,6 +65,18 @@ int testcolor() {
   check(rgb5.r < 0, "RGB limit");
   check(rgb5.g < 0, "RGB limit");
   check(rgb5.b > 1, "RGB limit");
+
+  check(color::LABtoLCH(color::LAB{50, 20, 0}).h, 0, "LCH hue");
+  check(color::LABtoLCH(color::LAB{50, 0, 20}).h, 90, "LCH hue");
+  check(color::LABtoLCH(color::LAB{50, -20, 0}).h, 180, "LCH hue");
+  check(color::LABtoLCH(color::LAB{50, 0, -20}).h, 270, "LCH hue");
+
+  check(color::LCHtoLAB(color::LCH{50, 20, 45}).a, 20. / sqrt(2), "LCH -> LAB");
+  check(color::LCHtoLAB(color::LCH{50, 20, 45}).b, 20. / sqrt(2), "LCH -> LAB");
+  check(color::LCHtoLAB(color::LCH{50, 20, 225}).a, -20. / sqrt(2),
+        "LCH -> LAB");
+  check(color::LCHtoLAB(color::LCH{50, 20, 225}).b, -20. / sqrt(2),
+        "LCH -> LAB");
 
   std::cout << std::endl;
   int ret = EXIT_SUCCESS;

@@ -11,14 +11,6 @@
  * Conversions.
  ******************************************************************************/
 
-constexpr double color::deg2Rad(const double deg) {
-  return (deg * (M_PI / 180.0));
-}
-
-constexpr double color::rad2Deg(const double rad) {
-  return ((180.0 / M_PI) * rad);
-}
-
 double color::CIEDE2000(const LAB &lab1, const LAB &lab2) {
   /*
    * "For these and all other numerical/graphical 􏰀delta E00 values

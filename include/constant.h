@@ -17,12 +17,12 @@ const double A31 = -0.03269638;
 const double A32 = -0.18259425;
 const double A33 = 1.4716528;
 
-static const double r2 = 0.2;  // cyan's absorbance of green
-static const double r3 = 0.1;  // cyan's absorbance of blue
-static const double g1 = 0.0;  // magenta's absorbance of red
-static const double g3 = 0.1;  // magenta's absorbance of blue
-static const double b1 = 0;    // yellow's absorbance of red
-static const double b2 = 0.1;  // yellow's absorbance of green
+static const double r2 = 0.2; // cyan's absorbance of green
+static const double r3 = 0.1; // cyan's absorbance of blue
+static const double g1 = 0.0; // magenta's absorbance of red
+static const double g3 = 0.1; // magenta's absorbance of blue
+static const double b1 = 0;   // yellow's absorbance of red
+static const double b2 = 0.1; // yellow's absorbance of green
 
 /* (1 - RGB) -> CMY */
 const double B11 = 1 - b2 * g3;
