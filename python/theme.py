@@ -89,7 +89,11 @@ def argparser():
 def parse(args, ctx):
     data_dir = os.path.join(os.path.dirname(__file__), 'data')
     if args.inplace:
-        templates = [('vscode', os.path.expanduser('~/.vscode/extensions'))]
+        templates = [
+            ('vscode', os.path.expanduser('~/.vscode/extensions')),
+            ('nvim', os.path.expanduser('~/.vim')),
+            ('nvim', os.path.expanduser('~/.config/nvim')),
+        ]
         for profile, dest in templates:
             print(f'Apply profile \'{profile}\'')
             recursive_render(

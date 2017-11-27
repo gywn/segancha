@@ -1,0 +1,86 @@
+" Vim color file
+
+if exists('syntax_on')
+  syntax reset
+endif
+
+" ... 1~15 should be set by the terminal
+
+let g:colors_name = 'perception-{{name}}'
+
+hi NonText      ctermfg=7    ctermbg=NONE guifg=#{{bg-1-hex}} guibg=NONE    cterm=NONE         gui=NONE
+hi Normal       ctermfg=NONE ctermbg=NONE guifg=#{{fg-hex}} guibg=#{{bg-0-hex}} cterm=NONE         gui=NONE
+
+hi Character    ctermfg=1    ctermbg=NONE guifg=#{{main-0-hex}} guibg=NONE    cterm=bold         gui=bold
+hi Comment      ctermfg=4    ctermbg=NONE guifg=#{{main-5-hex}} guibg=NONE    cterm=italic       gui=italic
+hi Conceal      ctermfg=NONE ctermbg=NONE guifg=#{{fg-hex}} guibg=#{{bg-0-hex}} cterm=NONE         gui=NONE
+hi Constant     ctermfg=1    ctermbg=NONE guifg=#{{main-0-hex}} guibg=NONE    cterm=NONE         gui=NONE
+hi Directory    ctermfg=4    ctermbg=NONE guifg=#{{main-5-hex}} guibg=NONE    cterm=NONE         gui=NONE
+hi Error        ctermfg=9    ctermbg=11   guifg=#{{bg-0-hex}} guibg=#{{red-2-hex}} cterm=NONE         gui=NONE
+hi EyeCatcher   ctermfg=8    ctermbg=NONE guifg=#{{blue-2-hex}} guibg=NONE    cterm=bold         gui=bold
+hi Identifier   ctermfg=6    ctermbg=NONE guifg=#{{main-1-hex}} guibg=NONE    cterm=NONE         gui=NONE
+hi Ignore       ctermfg=7    ctermbg=NONE guifg=#{{bg-1-hex}} guibg=NONE    cterm=NONE         gui=NONE
+hi IncSearch    ctermfg=4    ctermbg=12   guifg=#{{main-5-hex}} guibg=#{{blue-0-hex}} cterm=NONE         gui=NONE
+hi PreProc      ctermfg=5    ctermbg=NONE guifg=#{{main-6-hex}} guibg=NONE    cterm=NONE         gui=NONE
+hi Search       ctermfg=4    ctermbg=12   guifg=#{{main-5-hex}} guibg=#{{blue-0-hex}} cterm=NONE         gui=NONE
+hi Special      ctermfg=5    ctermbg=NONE guifg=#{{main-6-hex}} guibg=NONE    cterm=NONE         gui=NONE
+hi SpecialChar  ctermfg=1    ctermbg=NONE guifg=#{{main-0-hex}} guibg=NONE    cterm=bold         gui=bold
+hi Statement    ctermfg=3    ctermbg=NONE guifg=#{{main-2-hex}} guibg=NONE    cterm=NONE         gui=NONE
+hi Todo         ctermfg=6    ctermbg=NONE guifg=#{{blue-2-hex}} guibg=NONE    cterm=bold         gui=bold
+hi Type         ctermfg=2    ctermbg=NONE guifg=#{{main-3-hex}} guibg=NONE    cterm=NONE         gui=NONE
+hi Underlined   ctermfg=NONE ctermbg=NONE guifg=NONE    guibg=NONE    cterm=underline    gui=underline
+
+hi diffAdded    ctermfg=2    ctermbg=NONE guifg=#{{main-3-hex}} guibg=NONE    cterm=NONE         gui=NONE
+hi diffChanged  ctermfg=3    ctermbg=NONE guifg=#{{main-2-hex}} guibg=NONE    cterm=NONE         gui=NONE
+hi diffRemoved  ctermfg=1    ctermbg=NONE guifg=#{{main-0-hex}} guibg=NONE    cterm=NONE         gui=NONE
+
+hi ErrorMsg     ctermfg=1    ctermbg=NONE guifg=#{{main-0-hex}} guibg=NONE    cterm=bold         gui=bold
+hi ModeMsg      ctermfg=0    ctermbg=NONE guifg=#{{line-2-hex}} guibg=NONE    cterm=bold         gui=bold
+hi MoreMsg      ctermfg=4    ctermbg=NONE guifg=#{{main-5-hex}} guibg=NONE    cterm=NONE         gui=NONE
+hi Question     ctermfg=2    ctermbg=NONE guifg=#{{main-3-hex}} guibg=NONE    cterm=NONE         gui=NONE
+hi SpecialKey   ctermfg=1    ctermbg=NONE guifg=#{{main-0-hex}} guibg=NONE    cterm=NONE         gui=NONE
+hi WarningMsg   ctermfg=3    ctermbg=NONE guifg=#{{main-2-hex}} guibg=NONE    cterm=NONE         gui=NONE
+
+hi CursorLine   ctermfg=NONE ctermbg=7    guifg=NONE    guibg=#{{bg-1-hex}} cterm=NONE         gui=NONE
+hi DiffAdd      ctermfg=NONE ctermbg=10   guifg=NONE    guibg=#{{green-0-hex}} cterm=NONE         gui=NONE
+hi DiffChange   ctermfg=NONE ctermbg=NONE cterm=NONE    guifg=NONE    guibg=NONE
+hi DiffDelete   ctermfg=7    ctermbg=7    guifg=#{{red-0-hex}} guibg=#{{bg-1-hex}} cterm=NONE         gui=NONE
+hi DiffText     ctermfg=NONE ctermbg=11   guifg=NONE    guibg=#{{yellow-0-hex}} cterm=NONE         gui=NONE
+hi FoldColumn   ctermfg=0    ctermbg=7    guifg=#{{line-2-hex}} guibg=#{{bg-1-hex}} cterm=NONE         gui=NONE
+hi Folded       ctermfg=0    ctermbg=NONE guifg=#{{line-2-hex}} guibg=NONE    cterm=NONE         gui=NONE
+hi LineNr       ctermfg=0    ctermbg=7    guifg=#{{line-1-hex}} guibg=#{{bg-1-hex}} cterm=NONE         gui=NONE
+hi CursorLineNr ctermfg=0    ctermbg=7    guifg=#{{line-1-hex}} guibg=#{{bg-1-hex}} cterm=NONE         gui=NONE
+hi MatchParen   ctermfg=NONE ctermbg=12   guifg=NONE    guibg=#{{blue-0-hex}} cterm=bold         gui=bold
+hi SignColumn   ctermfg=0    ctermbg=7    guifg=#{{line-2-hex}} guibg=#{{bg-1-hex}} cterm=NONE         gui=NONE
+hi StatusLine   ctermfg=NONE ctermbg=NONE guifg=NONE    guibg=#{{bg-2-hex}}    cterm=bold,reverse gui=bold
+hi StatusLineNC ctermfg=NONE ctermbg=NONE guifg=NONE    guibg=NONE    cterm=reverse      gui=reverse
+hi VertSplit    ctermfg=NONE ctermbg=NONE guifg=NONE    guibg=NONE    cterm=None         gui=None
+hi Visual       ctermfg=NONE ctermbg=11   guifg=NONE    guibg=#{{yellow-0-hex}} cterm=None         gui=None
+hi WildMenu     ctermfg=NONE ctermbg=11   guifg=NONE    guibg=#{{yellow-0-hex}} cterm=bold,reverse gui=bold,reverse
+hi Selected     ctermfg=NONE ctermbg=4    guifg=NONE    guibg=#{{main-5-hex}} cterm=bold,reverse gui=bold,reverse
+
+hi Cursor       guifg=NONE   guibg=#{{bg-1-hex}}
+hi iCursor      guifg=NONE   guibg=#{{main-0-hex}}
+hi vCursor      guifg=NONE   guibg=#{{yellow-1-hex}}
+
+augroup ColorSchemePerception
+  au InsertLeave * hi  StatusLine   ctermfg=NONE ctermbg=NONE guifg=NONE    guibg=NONE    cterm=bold,reverse gui=bold,reverse
+  au InsertEnter * hi  StatusLine   ctermfg=NONE ctermbg=NONE guifg=#{{main-0-hex}}    guibg=NONE    cterm=bold,reverse gui=bold,reverse
+  " au InsertEnter * hi  CursorLine   ctermfg=NONE ctermbg=NONE cterm=NONE
+  " au InsertLeave * hi  CursorLine   ctermfg=NONE ctermbg=7    guifg=NONE    guibg=#{{bg-1-hex}} cterm=NONE         gui=NONE
+  au InsertEnter * set nocursorline
+  au InsertLeave * set cursorline
+  au BufWinEnter * set cursorline
+  au WinEnter    * set cursorline
+  au WinLeave    * set nocursorline
+augroup END
+
+" ... Leave these groups to default values
+
+" hi CursorColumn ctermfg=11   ctermbg=1    cterm=NONE
+" hi Menu         gui=NONE     guifg=black  guibg=cyan
+" hi Pmenu        gui=NONE     guibg=brown
+" hi TabLine      ctermbg=15   ctermfg=NONE term=NONE 
+" hi TabLineFill  ctermbg=NONE ctermfg=NONE
+" hi TabLineSel   ctermbg=7    ctermfg=0
+" hi Title        cterm=bold
