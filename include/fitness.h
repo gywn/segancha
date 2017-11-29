@@ -36,7 +36,7 @@ std::ostream &operator<<(std::ostream &os, const PerceptionResult &res);
 
 /*
  * @param M numbers of free colors
- * @param L luminocity constraint, < 0 to be ignored
+ * @param L luminosity constraint, < 0 to be ignored
  * @param maxC maximal chroma, < 0 to be ignored
  * @param fixed vector of fixed colors, optional
  * @param quiet don't write info to stdout

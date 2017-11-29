@@ -176,7 +176,7 @@ static PyMethodDef methods[] = {
      "--------------------------------------\n"
      "\n"
      "@param M number of colors\n"
-     "@param L=-1 luminocity, < 0 for no constraint\n"
+     "@param L=-1 luminosity, < 0 for no constraint\n"
      "@param maxC=-1 maximal chroma, < 0 for no constraint\n"
      "@param fixed=None iterable of (l, a, b)\n"
      "@param quiet=False print messages to stdout"},
@@ -217,7 +217,7 @@ static PyMethodDef methods[] = {
      "----------------------\n"
      "\n"
      "@param T temperature in Kelvin, 4000 < T < 25000\n"
-     "@param L luminocity in LAB"},
+     "@param L luminosity in LAB"},
 
     {nullptr, nullptr, 0, nullptr}};
 

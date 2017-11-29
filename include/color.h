@@ -91,11 +91,11 @@ inline LAB LCHtoLAB(const LCH &lch) {
 }
 
 // @param T temperature in Kelvin 4000 < T < 25000
-// @param y luminocity in XYZ
+// @param y luminosity in XYZ
 XYZ IlluminantDKelvin(double T, double y);
 
 // @param cx chromaticity x in xyY
-// @param y luminocity in XYZ
+// @param y luminosity in XYZ
 XYZ IlluminantDChromaticity(double cx, double y);
 
 } // namespace color

@@ -32,7 +32,7 @@ def argparser():
         dest='Lf',
         metavar='Lf',
         type=float,
-        help='foreground luminocity between 0 < Lf < 100')
+        help='foreground luminosity between 0 < Lf < 100')
     ps.add_argument(
         '-b',
         '--background',
@@ -41,16 +41,16 @@ def argparser():
         dest='Lb',
         metavar='Lb',
         type=float,
-        help='background luminocity 0 < Lb < 100')
+        help='background luminosity 0 < Lb < 100')
     ps.add_argument(
         '-L',
-        '--palette-luminocity',
+        '--palette-luminosity',
         '--L3',
         default=-1,
         dest='L3',
         metavar='L3',
         type=float,
-        help='main palette luminocity 0 < L3 < 100')
+        help='main palette luminosity 0 < L3 < 100')
     ps.add_argument(
         '--maxC',
         default=-1,
