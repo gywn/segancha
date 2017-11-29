@@ -4,7 +4,7 @@ A Python3 library with CLI that generates the optimal discernible color palette 
 
 ## Installation and Usage
 
-    pip3 install https://github.com/gywn/segancha/archive/v0.0.2.tar.gz
+    pip3 install segancha
 
 Generate demo page
 
