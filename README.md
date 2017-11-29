@@ -4,8 +4,7 @@ A Python3 library with CLI that generates the optimal discernible color palette 
 
 ## Installation and Usage
 
-    git clone https://github.com/gywn/perception.git
-    cd perception && python3 setup.py install
+    pip3 install https://github.com/gywn/perception/archive/v0.0.2.tar.gz
 
 Generate demo page
 

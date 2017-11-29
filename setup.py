@@ -2,20 +2,21 @@
 # -*- coding: utf-8 -*-
 
 from distutils.version import LooseVersion
+from functools import reduce
+from glob import glob
+from multiprocessing import cpu_count
+from platform import system
 from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
-import glob
-import multiprocessing
 import os
-import platform
 import re
 import subprocess
 import sys
 
 
 class CMakeExtension(Extension):
-    def __init__(self, name, sourcedir=''):
-        Extension.__init__(self, name, sources=[])
+    def __init__(self, name, sourcedir='', **kwargs):
+        Extension.__init__(self, name, **kwargs)
         self.sourcedir = os.path.abspath(sourcedir)
 
 
@@ -28,7 +29,7 @@ class CMakeBuild(build_ext):
                 "CMake must be installed to build the following extensions: " +
                 ", ".join(e.name for e in self.extensions))
 
-        if platform.system() == "Windows":
+        if system() == "Windows":
             cmake_version = LooseVersion(
                 re.search(r'version\s*([\d.]+)', out.decode()).group(1))
             if cmake_version < '3.1.0':
@@ -48,7 +49,7 @@ class CMakeBuild(build_ext):
         cfg = 'Debug' if self.debug else 'Release'
         build_args = ['--config', cfg]
 
-        if platform.system() == "Windows":
+        if system() == "Windows":
             cmake_args += [
                 '-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{}={}'.format(
                     cfg.upper(), extdir)
@@ -58,7 +59,7 @@ class CMakeBuild(build_ext):
             build_args += ['--', '/m']
         else:
             cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
-            build_args += ['--', '-j{0}'.format(multiprocessing.cpu_count())]
+            build_args += ['--', '-j{0}'.format(cpu_count())]
 
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
@@ -81,14 +82,26 @@ setup(
     install_requires=['pystache'],
     packages=['perception'],
     package_dir={'perception': 'python'},
-    ext_modules=[CMakeExtension('perception.native')],
+    ext_modules=[
+        CMakeExtension(
+            'perception.native',
+            sources=[
+                f
+                for f in
+                reduce(lambda l, d: l + glob(f'{d}/**', recursive=True),
+                       ['cmake', 'include', 'src'], ['CMakeLists.txt'])
+                if os.path.isfile(f)
+            ])
+    ],
     package_data={
         'perception': [
             os.path.relpath(p, 'python')
-            for p in glob.glob('python/data/**', recursive=True)
+            for p in glob('python/data/**', recursive=True)
         ]
     },
     entry_points={'console_scripts': [
         'perception = perception.cli:main',
     ]},
-    cmdclass=dict(build_ext=CMakeBuild))
+    cmdclass=dict(build_ext=CMakeBuild),
+    url='https://github.com/gywn/perception',
+    download_url='https://github.com/gywn/perception/archive/v0.0.2.tar.gz')
