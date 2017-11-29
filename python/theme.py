@@ -1,5 +1,5 @@
 from itertools import product
-from .native import LABtoRGB, LCHtoLAB, maxChroma, perception, IlluminantD
+from .native import LABtoRGB, LCHtoLAB, maxChroma, segancha, IlluminantD
 
 # D50_x = 0.3457048
 SEMANTIC_HUE = {'red': 30, 'yellow': 80, 'green': 120, 'blue': 260}
@@ -61,7 +61,7 @@ def update_context(args, ctx):
             + f'args.L0={args.L0} Lb={args.Lb} T={args.T}')
 
     sgn = 1 if args.Lf > args.Lb else -1
-    palette3 = perception(
+    palette3 = segancha(
         7,
         L=args.L3,
         maxC=args.maxC,

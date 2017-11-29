@@ -76,15 +76,15 @@ with open('python/version.py') as f:
     exec(f.read())
 
 setup(
-    name='perception',
+    name='segancha',
     version=__version__,  # noqa: F821
-    description='Perception colors model',
+    description='Segancha colors model',
     install_requires=['pystache'],
-    packages=['perception'],
-    package_dir={'perception': 'python'},
+    packages=['segancha'],
+    package_dir={'segancha': 'python'},
     ext_modules=[
         CMakeExtension(
-            'perception.native',
+            'segancha.native',
             sources=[
                 f
                 for f in
@@ -94,14 +94,14 @@ setup(
             ])
     ],
     package_data={
-        'perception': [
+        'segancha': [
             os.path.relpath(p, 'python')
             for p in glob('python/data/**', recursive=True)
         ]
     },
     entry_points={'console_scripts': [
-        'perception = perception.cli:main',
+        'segancha = segancha.cli:main',
     ]},
     cmdclass=dict(build_ext=CMakeBuild),
-    url='https://github.com/gywn/perception',
-    download_url='https://github.com/gywn/perception/archive/v0.0.2.tar.gz')
+    url='https://github.com/gywn/segancha',
+    download_url='https://github.com/gywn/segancha/archive/v0.0.1.tar.gz')

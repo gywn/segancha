@@ -22,7 +22,7 @@ double offChroma(const color::LCH &lch, double C);
 LexiProduct<double> fitnessFunc(const std::vector<color::LAB> &lab,
                                 size_t M = 0, double maxC = -1.);
 
-struct PerceptionResult {
+struct SeganchaResult {
   unsigned long flags;
   double L;
   double maxC;
@@ -30,9 +30,9 @@ struct PerceptionResult {
   std::vector<color::RGB> rgb;
   LexiProduct<double> fitness;
 };
-using PerceptionResult = struct PerceptionResult;
+using SeganchaResult = struct SeganchaResult;
 
-std::ostream &operator<<(std::ostream &os, const PerceptionResult &res);
+std::ostream &operator<<(std::ostream &os, const SeganchaResult &res);
 
 /*
  * @param M numbers of free colors
@@ -40,10 +40,10 @@ std::ostream &operator<<(std::ostream &os, const PerceptionResult &res);
  * @param maxC maximal chroma, < 0 to be ignored
  * @param fixed vector of fixed colors, optional
  * @param quiet don't write info to stdout
- * @return PerceptionResult
+ * @return SeganchaResult
  */
-PerceptionResult perception(size_t M, double L = -1, double maxC = -1,
-                            std::vector<color::LAB> const *fixed = nullptr,
-                            bool quiet = false);
+SeganchaResult segancha(size_t M, double L = -1, double maxC = -1,
+                        std::vector<color::LAB> const *fixed = nullptr,
+                        bool quiet = false);
 
 color::LCH maxChroma(const color::LCH &lch, double maxC = -1);

@@ -111,7 +111,7 @@ void fill_lab(const std::vector<double> &x, double L,
     lab[j] = color::LAB{L, x[2 * j], x[2 * j + 1]};
 }
 
-std::ostream &operator<<(std::ostream &os, const PerceptionResult &res) {
+std::ostream &operator<<(std::ostream &os, const SeganchaResult &res) {
   os << "{" << std::endl << "  flags: " << res.flags << std::endl;
   os << "  L: " << res.L << std::endl;
   os << "  rgb: [" << std::endl;
@@ -122,8 +122,8 @@ std::ostream &operator<<(std::ostream &os, const PerceptionResult &res) {
   return os;
 }
 
-PerceptionResult perception(size_t M, double L, double maxC,
-                            std::vector<color::LAB> const *fixed, bool quiet) {
+SeganchaResult segancha(size_t M, double L, double maxC,
+                        std::vector<color::LAB> const *fixed, bool quiet) {
   bool freeL = L < 0;
   bool noFixed = fixed == nullptr || fixed->size() == 0;
   size_t fixedM = fixed == nullptr ? 0 : fixed->size();
@@ -196,9 +196,9 @@ PerceptionResult perception(size_t M, double L, double maxC,
     rgb[i] = color::LABtoRGB(lab[i]);
   }
 
-  return PerceptionResult{flags,          freeL ? xfinal[2 * M] : L,
-                          finalMaxC,      std::move(lab),
-                          std::move(rgb), std::move(fitness)};
+  return SeganchaResult{flags,          freeL ? xfinal[2 * M] : L,
+                        finalMaxC,      std::move(lab),
+                        std::move(rgb), std::move(fitness)};
 }
 
 color::LCH maxChroma(const color::LCH &lch, double maxC) {

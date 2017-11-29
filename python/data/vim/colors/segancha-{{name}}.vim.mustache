@@ -6,7 +6,7 @@ endif
 
 " ... 1~15 should be set by the terminal
 
-let g:colors_name = 'perception-{{name}}'
+let g:colors_name = 'segancha-{{name}}'
 
 hi NonText      ctermfg=7    ctermbg=NONE guifg=#{{bg-1-hex}} guibg=NONE    cterm=NONE         gui=NONE
 hi Normal       ctermfg=NONE ctermbg=NONE guifg=#{{fg-hex}} guibg=#{{bg-0-hex}} cterm=NONE         gui=NONE
@@ -63,7 +63,7 @@ hi Cursor       guifg=NONE   guibg=#{{bg-1-hex}}
 hi iCursor      guifg=NONE   guibg=#{{main-0-hex}}
 hi vCursor      guifg=NONE   guibg=#{{yellow-1-hex}}
 
-augroup ColorSchemePerception
+augroup ColorSchemeSegancha
   au InsertLeave * hi  StatusLine   ctermfg=NONE ctermbg=NONE guifg=NONE    guibg=NONE    cterm=bold,reverse gui=bold,reverse
   au InsertEnter * hi  StatusLine   ctermfg=NONE ctermbg=NONE guifg=#{{main-0-hex}}    guibg=NONE    cterm=bold,reverse gui=bold,reverse
   " au InsertEnter * hi  CursorLine   ctermfg=NONE ctermbg=NONE cterm=NONE

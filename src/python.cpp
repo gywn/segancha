@@ -89,7 +89,7 @@ static PyObject *IlluminantDChromaticity(PyObject *self, PyObject *args) {
   return Py_BuildValue("(ddd)", lab.l, lab.a, lab.b);
 }
 
-static PyObject *pyperception(PyObject *self, PyObject *args, PyObject *kw) {
+static PyObject *pysegancha(PyObject *self, PyObject *args, PyObject *kw) {
   // color::LAB fg, bg;
   unsigned long M;
   double L = -1;
@@ -139,7 +139,7 @@ static PyObject *pyperception(PyObject *self, PyObject *args, PyObject *kw) {
   //   std::cout << std::endl;
   // }
 
-  const auto result = perception(M, L, maxC, &fixed, quiet);
+  const auto result = segancha(M, L, maxC, &fixed, quiet);
   PyObj lab = PyObj(PyList_New(0));
   for (const auto &c : result.lab)
     PyList_Append(lab.ptr, PyObj(Py_BuildValue("(ddd)", c.l, c.a, c.b)).ptr);
@@ -171,8 +171,8 @@ static PyObject *pymaxChroma(PyObject *self, PyObject *args, PyObject *kw) {
 }
 
 static PyMethodDef methods[] = {
-    {"perception", (PyCFunction)pyperception, METH_VARARGS | METH_KEYWORDS,
-     "perception colors anchored by N colors\n"
+    {"segancha", (PyCFunction)pysegancha, METH_VARARGS | METH_KEYWORDS,
+     "segancha colors anchored by N colors\n"
      "--------------------------------------\n"
      "\n"
      "@param M number of colors\n"
@@ -222,7 +222,7 @@ static PyMethodDef methods[] = {
     {nullptr, nullptr, 0, nullptr}};
 
 static struct PyModuleDef module = {
-    PyModuleDef_HEAD_INIT, "perception",
-    "Python interface for perception colors library", -1, methods};
+    PyModuleDef_HEAD_INIT, "segancha",
+    "Python interface for segancha colors library", -1, methods};
 
 PyMODINIT_FUNC PyInit_native(void) { return PyModule_Create(&module); }

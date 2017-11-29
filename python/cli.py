@@ -8,13 +8,13 @@ from .version import __version__
 
 def argparser():
     ps = ArgumentParser(
-        prog='perception',
+        prog='segancha',
         description=dedent("""
             Generate optimized discernible color palette and themes settings
 
             Example:
-              perception --temperature -1 --profile demo
-              perception --background 97 --profile vscode
+              segancha --temperature -1 --profile demo
+              segancha --background 97 --profile vscode
             """),
         formatter_class=RawDescriptionHelpFormatter)
 

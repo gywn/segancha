@@ -16,7 +16,7 @@ int main(int argc, char *argv[]) {
   const size_t M = 7;
   const std::vector<color::LAB> fixed{{0, 0, 0}, {90, 0, 0}};
   for (const auto L : std::vector<double>{-1, 30, 60}) {
-    const auto result = perception(M, L, 100, &fixed);
+    const auto result = segancha(M, L, 100, &fixed);
     std::cout << result << std::endl;
   }
 

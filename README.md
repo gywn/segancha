@@ -1,20 +1,20 @@
-# Perception
+# Segancha
 
 A Python3 library with CLI that generates the optimal discernible color palette for theme building.
 
 ## Installation and Usage
 
-    pip3 install https://github.com/gywn/perception/archive/v0.0.2.tar.gz
+    pip3 install https://github.com/gywn/segancha/archive/v0.0.2.tar.gz
 
 Generate demo page
 
-    perception --profile demo
-    cd ./perception-default/demo/
+    segancha --profile demo
+    cd ./segancha-default/demo/
 
 Generate warm & dark theme extension for VSCode
 
-    perception --name warm-and-dark --temperature 4500 --background 15 --profile vscode
-    rsync -a ./perception-warm-and-dark/vscode/ ~/.vscode/extensions/
+    segancha --name warm-and-dark --temperature 4500 --background 15 --profile vscode
+    rsync -a ./segancha-warm-and-dark/vscode/ ~/.vscode/extensions/
 
 ## Aknowladgement
 

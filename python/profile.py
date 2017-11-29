@@ -38,7 +38,7 @@ def recursive_render(src_path,
 # @param args.verbose
 def parse(args, ctx):
     srcs = ['.', os.path.join(os.path.dirname(__file__), 'data')]
-    dest = f'./perception-{args.name}'
+    dest = f'./segancha-{args.name}'
     if not args.profiles:
         args.profiles = ['demo']
         print('Available builtin profiles:')
