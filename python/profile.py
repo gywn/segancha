@@ -32,3 +32,30 @@ def recursive_render(src_path,
         shutil.copyfile(src_path, dest_path)
         if debug:
             print(f'Copy file {dest_path}')
+
+
+# @param args.profiles
+# @param args.verbose
+def parse(args, ctx):
+    srcs = ['.', os.path.join(os.path.dirname(__file__), 'data')]
+    dest = f'./perception-{args.name}'
+    if not args.profiles:
+        args.profiles = ['demo']
+        print('Available builtin profiles:')
+        for d in srcs[1:]:
+            if not os.path.isdir(d):
+                continue
+            for n in os.listdir(d):
+                print(f'  {n}')
+    for profile in args.profiles:
+        profile_srcs = [os.path.join(d, profile) for d in srcs]
+        found = False
+        for profile_src in profile_srcs:
+            if os.path.exists(profile_src):
+                found = True
+                break
+        if not found:
+            raise OSError(f'Cannot find profile \'{profile}\'')
+        profile_dest = os.path.join(dest, profile)
+        print(f'Parse profile \'{profile}\' into {profile_dest}')
+        recursive_render(profile_src, profile_dest, ctx, debug=args.verbose)

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Perception Theme - {{name}} | Demo</title>
+    <link href="https://fonts.googleapis.com/css?family=Inconsolata:400,700" rel="stylesheet">
+    <style>
+        .fg { color: #{{fg-hex}}; }
+        .fg-frame { border-color: #{{fg-hex}}; }
+        .line-2 { color: #{{line-2-hex}}; }
+        .line-2-frame { border-color: #{{line-2-hex}}; }
+        .line-1 { color: #{{line-1-hex}}; }
+        .line-1-frame { border-color: #{{line-1-hex}}; }
+        .line-0 { color: #{{line-0-hex}}; }
+        .line-0-frame { border-color: #{{line-0-hex}}; }
+        .main-0 { color: #{{main-0-hex}}; }
+        .main-1 { color: #{{main-1-hex}}; }
+        .main-2 { color: #{{main-2-hex}}; }
+        .main-3 { color: #{{main-3-hex}}; }
+        .main-4 { color: #{{main-4-hex}}; }
+        .main-5 { color: #{{main-5-hex}}; }
+        .main-6 { color: #{{main-6-hex}}; }
+        .red-2 { color: #{{red-2-hex}}; }
+        .yellow-2 { color: #{{yellow-2-hex}}; }
+        .green-2 { color: #{{green-2-hex}}; }
+        .blue-2 { color: #{{blue-2-hex}}; }
+        .red-1 { background-color: #{{red-1-hex}}; }
+        .yellow-1 { background-color: #{{yellow-1-hex}}; }
+        .green-1 { background-color: #{{green-1-hex}}; }
+        .blue-1 { background-color: #{{blue-1-hex}}; }
+        .red-0 { background-color: #{{red-0-hex}}; }
+        .yellow-0 { background-color: #{{yellow-0-hex}}; }
+        .green-0 { background-color: #{{green-0-hex}}; }
+        .blue-0 { background-color: #{{blue-0-hex}}; }
+        .bg-2 { background-color: #{{bg-2-hex}}; }
+        .bg-1 { background-color: #{{bg-1-hex}}; }
+        .bg-0 { background-color: #{{bg-0-hex}}; }
+        .bg-0-color { color: #{{bg-0-hex}}; }
+        body {
+            padding: calc(26px * 2) calc(18px * 2) ;
+        }
+        #wrapper {
+            margin: 0 auto;
+            max-width: calc(18px * 14 * 2 + 416px + 18px * 3 + 18px * 2 * 2);
+        }
+        #thumb {
+            float: left;
+            border: 1px solid #{{line-0-hex}};
+            border-radius: 4px;
+            margin-right: calc(18px * 3);
+            margin-bottom: calc(24px * 2);
+        }
+        #hex-wrapper {
+            float: left;
+            max-width: calc(18px * 14 * 2);
+        }
+        pre {
+            float: left;
+            margin: 0 auto;
+            font: 18px/26px 'Inconsolata', monospace;
+        }
+        b {
+            display: inline-block;
+            margin-bottom: calc(18px / 2);
+            line-height: calc(18px + 4);
+            border-bottom: 2px solid #{{fg-hex}};
+        }
+        span {
+            display: inline-block;
+            line-height: calc(26px - 4px);
+            width: calc(13 * 10px);
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .has-bg {
+            padding: 0px calc(18px / 2);
+        }
+        .hex { color: #{{line-1-hex}}; }
+        .hex::before { content: '#'; }
+    </style>
+</head>
+<body id="home" class='fg bg-0'>
+<div id="wrapper">
+    <img src='perception-{{name}}-thumb.svg' id='thumb' />
+    <div id='hex-wrapper'>
+        <pre style="width: calc(18px * 14);">
+<b>Foreground:</b>
+<span class="fg">fg-hex</span> <span class=hex>{{fg-hex}}</span>
+
+<b>Lines:</b>
+<span class="line-2">line-2-hex</span> <span class=hex>{{line-2-hex}}</span>
+<span class="line-1">line-1-hex</span> <span class=hex>{{line-1-hex}}</span>
+<span class="line-0">line-0-hex</span> <span class=hex>{{line-0-hex}}</span>
+
+<b>Foreground Palette:</b>
+<span class="main-0">main-0-hex</span> <span class=hex>{{main-0-hex}}</span>
+<span class="main-1">main-1-hex</span> <span class=hex>{{main-1-hex}}</span>
+<span class="main-2">main-2-hex</span> <span class=hex>{{main-2-hex}}</span>
+<span class="main-3">main-3-hex</span> <span class=hex>{{main-3-hex}}</span>
+<span class="main-4">main-4-hex</span> <span class=hex>{{main-4-hex}}</span>
+<span class="main-5">main-5-hex</span> <span class=hex>{{main-5-hex}}</span>
+<span class="main-6">main-6-hex</span> <span class=hex>{{main-6-hex}}</span>
+
+<b>Semantic Foregrounds:</b>
+<span class="red-2">red-2-hex</span> <span class=hex>{{red-2-hex}}</span>
+<span class="yellow-2">yellow-2-hex</span> <span class=hex>{{yellow-2-hex}}</span>
+<span class="green-2">green-2-hex</span> <span class=hex>{{green-2-hex}}</span>
+<span class="blue-2">blue-2-hex</span> <span class=hex>{{blue-2-hex}}</span>
+        </pre>
+        <pre style="width: calc(18px * 14);">
+<b>Semantic Inversed Backgrounds:</b>
+<span class="red-1 bg-0-color has-bg">red-1-hex</span> <span class=hex>{{red-1-hex}}</span>
+<span class="yellow-1 bg-0-color has-bg">yellow-1-hex</span> <span class=hex>{{yellow-1-hex}}</span>
+<span class="green-1 bg-0-color has-bg">green-1-hex</span> <span class=hex>{{green-1-hex}}</span>
+<span class="blue-1 bg-0-color has-bg">blue-1-hex</span> <span class=hex>{{blue-1-hex}}</span>
+
+<b>Semantic Backgrounds/Inversed Foregrounds:</b>
+<span class="red-0 has-bg">red-0-hex</span> <span class=hex>{{red-0-hex}}</span>
+<span class="yellow-0 has-bg">yellow-0-hex</span> <span class=hex>{{yellow-0-hex}}</span>
+<span class="green-0 has-bg">green-0-hex</span> <span class=hex>{{green-0-hex}}</span>
+<span class="blue-0 has-bg">blue-0-hex</span> <span class=hex>{{blue-0-hex}}</span>
+
+<b>Backgrounds:</b>
+<span class="bg-2 has-bg">bg-2-hex</span> <span class=hex>{{bg-2-hex}}</span>
+<span class="bg-1 has-bg">bg-1-hex</span> <span class=hex>{{bg-1-hex}}</span>
+<span class="bg-0 has-bg">bg-0-hex</span> <span class=hex>{{bg-0-hex}}</span>
+        </pre>
+</div>
+</body>
+</html>

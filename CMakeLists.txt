@@ -5,7 +5,7 @@ project(perception)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wconversion -Wno-unused-private-field -Wno-unused-variable -Wno-unused-parameter -fno-omit-frame-pointer -fsanitize=address")
 set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_STATIC_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wconversion -Wno-unused-private-field -Wno-unused-variable -Wno-unused-parameter")
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wconversion -Wno-unused-private-field -Wno-unused-variable -Wno-unused-parameter")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(LIB_SOURCES src/colorspace.cpp src/CIEDE2000.cpp src/fitness.cpp)
 
