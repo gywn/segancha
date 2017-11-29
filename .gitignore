@@ -10,4 +10,5 @@
 build/
 dist/
 draft/
+Makefile
 perception-default/
