@@ -1,8 +1,7 @@
 from itertools import product
-from .native import LABtoRGB, LCHtoLAB, maxChroma, perception
+from .native import LABtoRGB, LCHtoLAB, maxChroma, perception, IlluminantD
 
-D65_A = -1.65 / 100  # a component of D65 in LAB
-D65_B = -19.33 / 100  # b component of D65 in LAB
+# D50_x = 0.3457048
 SEMANTIC_HUE = {'red': 30, 'yellow': 80, 'green': 120, 'blue': 260}
 
 
@@ -22,15 +21,11 @@ def interpolate2D(x1, y1, z1, x2, y2, z2, x3, y3, z3):
     return lambda x, y: (c - y * b - x * a) / d
 
 
-def tempered_gray(L, dK):
-    return (L, L * D65_A * dK, L * D65_B * dK)
-
-
 # @param args.Lf
 # @param args.Lb
 # @param args.L
 # @param args.maxC
-# @param args.dK
+# @param args.T
 # @param args.verbose
 def update_context(args, ctx):
     if args.Lb < 0:
@@ -40,7 +35,7 @@ def update_context(args, ctx):
     elif args.Lf < 0:
         args.Lf = 100 - args.Lb
 
-    ctx['fg-hex'] = rgb_hex(LABtoRGB((tempered_gray(args.Lf, args.dK))))
+    ctx['fg-hex'] = rgb_hex(LABtoRGB((IlluminantD(args.T, args.Lf))))
     ctx['ui-theme'] = 'vs-dark' if args.Lb < 50 else 'vs'
 
     # L3: text color, very close to Lf
@@ -63,14 +58,14 @@ def update_context(args, ctx):
     if (args.verbose):
         print(
             f'Init parameters: Lf={args.Lf} L3={args.L3} args.L2={args.L2} args.L1={args.L1} '
-            + f'args.L0={args.L0} Lb={args.Lb} dK={args.dK}')
+            + f'args.L0={args.L0} Lb={args.Lb} T={args.T}')
 
     sgn = 1 if args.Lf > args.Lb else -1
     palette3 = perception(
         7,
         L=args.L3,
         maxC=args.maxC,
-        fixed=[tempered_gray(args.L3, args.dK)],
+        fixed=[IlluminantD(args.T, args.L3)],
         quiet=not args.verbose)
 
     for i, rgb in enumerate(palette3['rgb']):
@@ -84,8 +79,8 @@ def update_context(args, ctx):
 
     for i, delta in enumerate([15, 25, 60]):
         ctx[f'line-{i}-hex'] = rgb_hex(
-            LABtoRGB(tempered_gray(args.Lb + sgn * delta, args.dK)))
+            LABtoRGB(IlluminantD(args.T, args.Lb + sgn * delta)))
 
     for i, delta in enumerate([0, 5, 12]):
         ctx[f'bg-{i}-hex'] = rgb_hex(
-            LABtoRGB(tempered_gray(args.Lb + sgn * delta, args.dK)))
+            LABtoRGB(IlluminantD(args.T, args.Lb + sgn * delta)))

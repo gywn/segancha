@@ -73,6 +73,7 @@ constexpr double rad2Deg(const double rad) { return ((180.0 / M_PI) * rad); }
 
 RGB XYZtoRGB(const XYZ &xyz);
 XYZ LABtoXYZ(const LAB &lab);
+LAB XYZtoLAB(const XYZ &xyz);
 CMY RGBtoCMY(const RGB &rgb);
 
 inline RGB LABtoRGB(const LAB &lab) { return XYZtoRGB(LABtoXYZ(lab)); }
@@ -88,6 +89,14 @@ inline LAB LCHtoLAB(const LCH &lch) {
   const double theta = color::deg2Rad(lch.h);
   return LAB{lch.l, lch.c * cos(theta), lch.c * sin(theta)};
 }
+
+// @param T temperature in Kelvin 4000 < T < 25000
+// @param y luminocity in XYZ
+XYZ IlluminantDKelvin(double T, double y);
+
+// @param cx chromaticity x in xyY
+// @param y luminocity in XYZ
+XYZ IlluminantDChromaticity(double cx, double y);
 
 } // namespace color
 

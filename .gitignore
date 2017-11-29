@@ -6,9 +6,6 @@
 *.ipynb
 *.o
 *.so
-*.py
-*.sh
-*.txt
 .vscode/
 build/
 dist/

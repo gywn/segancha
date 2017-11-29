@@ -66,6 +66,12 @@ int testcolor() {
   check(rgb5.g < 0, "RGB limit");
   check(rgb5.b > 1, "RGB limit");
 
+  color::LAB lab3{50, 10, 20};
+  auto lab3a = XYZtoLAB(LABtoXYZ(lab3));
+  check(lab3a.l, lab3.l, "LAB->XYZ->LAB");
+  check(lab3a.a, lab3.a, "LAB->XYZ->LAB");
+  check(lab3a.b, lab3.b, "LAB->XYZ->LAB");
+
   check(color::LABtoLCH(color::LAB{50, 20, 0}).h, 0, "LCH hue");
   check(color::LABtoLCH(color::LAB{50, 0, 20}).h, 90, "LCH hue");
   check(color::LABtoLCH(color::LAB{50, -20, 0}).h, 180, "LCH hue");
@@ -77,6 +83,11 @@ int testcolor() {
         "LCH -> LAB");
   check(color::LCHtoLAB(color::LCH{50, 20, 225}).b, -20. / sqrt(2),
         "LCH -> LAB");
+
+  auto d65 = color::IlluminantDKelvin(6500, 1);
+  check(d65.x, 0.95047, "D65");
+  check(d65.y, 1, "D65");
+  check(d65.z, 1.08833, "D65");
 
   std::cout << std::endl;
   int ret = EXIT_SUCCESS;

@@ -1,2 +1,2 @@
-from .native import LABtoRGB, LABtoLCH, LCHtoLAB, maxChroma, perception
+from .native import *
 from .version import __version__

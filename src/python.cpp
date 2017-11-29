@@ -35,6 +35,16 @@ static PyObject *LABtoRGB(PyObject *self, PyObject *args) {
   return Py_BuildValue("(ddd)", rgb.r, rgb.g, rgb.b);
 }
 
+static PyObject *LABtoXYZ(PyObject *self, PyObject *args) {
+  color::LAB lab;
+
+  if (!PyArg_ParseTuple(args, "(ddd)", &lab.l, &lab.a, &lab.b))
+    return nullptr;
+
+  const auto xyz = color::LABtoXYZ(lab);
+  return Py_BuildValue("(ddd)", xyz.x, xyz.y, xyz.z);
+}
+
 static PyObject *LABtoLCH(PyObject *self, PyObject *args) {
   color::LAB lab;
 
@@ -52,6 +62,30 @@ static PyObject *LCHtoLAB(PyObject *self, PyObject *args) {
     return nullptr;
 
   const auto lab = color::LCHtoLAB(lch);
+  return Py_BuildValue("(ddd)", lab.l, lab.a, lab.b);
+}
+
+static PyObject *IlluminantDKelvin(PyObject *self, PyObject *args) {
+  double T;
+  double l;
+
+  if (!PyArg_ParseTuple(args, "dd", &T, &l))
+    return nullptr;
+
+  const auto lab = color::XYZtoLAB(
+      color::IlluminantDKelvin(T, color::LABtoXYZ({l, 0, 0}).y));
+  return Py_BuildValue("(ddd)", lab.l, lab.a, lab.b);
+}
+
+static PyObject *IlluminantDChromaticity(PyObject *self, PyObject *args) {
+  double cx;
+  double l;
+
+  if (!PyArg_ParseTuple(args, "dd", &cx, &l))
+    return nullptr;
+
+  const auto lab = color::XYZtoLAB(
+      color::IlluminantDChromaticity(cx, color::LABtoXYZ({l, 0, 0}).y));
   return Py_BuildValue("(ddd)", lab.l, lab.a, lab.b);
 }
 
@@ -160,6 +194,12 @@ static PyMethodDef methods[] = {
      "\n"
      "@param lab (l,a,b)\n"},
 
+    {"LABtoXYZ", LABtoXYZ, METH_VARARGS,
+     "convert LAB to XYZ\n"
+     "------------------\n"
+     "\n"
+     "@param lab (l,a,b)\n"},
+
     {"LABtoLCH", LABtoLCH, METH_VARARGS,
      "convert LAB to LCH\n"
      "------------------\n"
@@ -171,6 +211,13 @@ static PyMethodDef methods[] = {
      "------------------\n"
      "\n"
      "@param lch (l,c,h)\n"},
+
+    {"IlluminantD", IlluminantDKelvin, METH_VARARGS,
+     "Calculate Illuminant D\n"
+     "----------------------\n"
+     "\n"
+     "@param T temperature in Kelvin, 4000 < T < 25000\n"
+     "@param L luminocity in LAB"},
 
     {nullptr, nullptr, 0, nullptr}};
 

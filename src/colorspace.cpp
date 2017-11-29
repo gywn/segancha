@@ -3,10 +3,9 @@
 #include <constant.h>
 
 namespace color {
-double sgn(double val);
-constexpr inline double pow3(double x);
 
 double sgn(double val) { return (0. < val) - (val < 0.); }
+constexpr inline double pow2(double x) { return x * x; }
 constexpr inline double pow3(double x) { return x * x * x; }
 
 RGB XYZtoRGB(const XYZ &xyz) {
@@ -40,6 +39,22 @@ XYZ LABtoXYZ(const LAB &lab) {
   return XYZ{x, y, z};
 }
 
+LAB XYZtoLAB(const XYZ &xyz) {
+  double x = xyz.x / PCS_X;
+  double y = xyz.y / PCS_Y;
+  double z = xyz.z / PCS_Z;
+
+  double fx = x > 0.008856 ? pow(x, 1. / 3.) : (7.787 * x + 16. / 116.);
+  double fy = y > 0.008856 ? pow(y, 1. / 3.) : (7.787 * y + 16. / 116.);
+  double fz = z > 0.008856 ? pow(z, 1. / 3.) : (7.787 * z + 16. / 116.);
+
+  double l = 116 * fy - 16;
+  double a = 500 * (fx - fy);
+  double b = 200 * (fy - fz);
+
+  return LAB{l, a, b};
+}
+
 CMY RGBtoCMY(const RGB &rgb) {
   const double cr = 1 - rgb.r;
   const double cg = 1 - rgb.g;
@@ -49,6 +64,24 @@ CMY RGBtoCMY(const RGB &rgb) {
   double y = cr * B31 + cg * B32 + cb * B33;
 
   return CMY{c, m, y};
+}
+
+// http://www.brucelindbloom.com/index.html?Eqn_DIlluminant.html
+XYZ IlluminantDKelvin(double T, double y) {
+  double cx = T < 7000 ? (-4.6070e9 / pow3(T) + 2.9678e6 / pow2(T) +
+                          0.09911e3 / T + 0.244063)
+                       : (-2.0064e9 / pow3(T) + 1.9018e6 / pow2(T) +
+                          0.24748e3 / T + 0.237040);
+  return IlluminantDChromaticity(cx, y);
+}
+
+XYZ IlluminantDChromaticity(double cx, double y) {
+  double cy = -3 * pow2(cx) + 2.87 * cx - 0.275;
+
+  double x = cx * y / cy;
+  double z = (1 - cx - cy) * y / cy;
+
+  return XYZ{x, y, z};
 }
 
 } // namespace color

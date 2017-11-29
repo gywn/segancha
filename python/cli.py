@@ -60,11 +60,11 @@ def argparser():
     ps.add_argument(
         '-T',
         '--temperature',
-        default=0,
-        dest='dK',
-        metavar='dK',
+        default=5000,
+        dest='T',
+        metavar='T',
         type=float,
-        help='temperature hint, -1(warm) < dK < 1(cold)')
+        help='temperature 4000 < T < 25000')
     ps.add_argument(
         '-p',
         '--profile',
