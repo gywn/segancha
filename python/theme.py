@@ -2,7 +2,14 @@ from itertools import product
 from .native import LABtoRGB, LCHtoLAB, maxChroma, segancha, IlluminantD
 
 # D50_x = 0.3457048
-SEMANTIC_HUE = {'red': 30, 'yellow': 80, 'green': 120, 'blue': 260}
+SEMANTIC_HUE = {
+    'red': 30,
+    'yellow': 80,
+    'green': 120,
+    'cyan': 200,
+    'blue': 260,
+    'magenta': 320
+}
 
 
 def hex(x):
