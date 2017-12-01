@@ -1,7 +1,10 @@
-# Segancha
-
-[![PyPI version](https://badge.fury.io/py/segancha.svg)](https://badge.fury.io/py/segancha)
-[![GitHub version](https://badge.fury.io/gh/gywn%2Fsegancha.svg)](https://badge.fury.io/gh/gywn%2Fsegancha)
+<p align="center">
+  <img src="https://raw.githubusercontent.com/gywn/segancha/images/images/logo.svg?sanitize=true" />
+  <br />
+  <br />
+  <a href="https://badge.fury.io/py/segancha"><img src="https://badge.fury.io/py/segancha.svg" alt="PyPI version" height="18"></a>
+  <a href="https://badge.fury.io/gh/gywn%2Fsegancha"><img src="https://badge.fury.io/gh/gywn%2Fsegancha.svg" alt="GitHub version" height="18"></a>
+</p>
 
 A Python3-based command-line tool that generates beautiful themes using optimized discernible colors.
 
