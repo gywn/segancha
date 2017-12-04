@@ -14,11 +14,15 @@ _Sègǎnchà_: A saying in Chinese depicting those who struggle to distinguish s
 
 Light themes generated with `--background 95` and `--temperature 4500`, `5000` and `5300`
 
-<img src="https://raw.githubusercontent.com/gywn/segancha/images/images/thumb-bg95-T4500.svg?sanitize=true" width="276" /> <img src="https://raw.githubusercontent.com/gywn/segancha/images/images/thumb-bg95-T5000.svg?sanitize=true" width="276" /> <img src="https://raw.githubusercontent.com/gywn/segancha/images/images/thumb-bg95-T5300.svg?sanitize=true" width="276" />
+<p align="center">
+<img src="https://raw.githubusercontent.com/gywn/segancha/images/images/thumb-bg95-T4500.svg?sanitize=true" width="290" /> <img src="https://raw.githubusercontent.com/gywn/segancha/images/images/thumb-bg95-T5000.svg?sanitize=true" width="290" /> <img src="https://raw.githubusercontent.com/gywn/segancha/images/images/thumb-bg95-T5300.svg?sanitize=true" width="290" />
+</p>
 
 Dark themes generated with `--background 20` and `--temperature 4000`, `5000` and `6000`
 
-<img src="https://raw.githubusercontent.com/gywn/segancha/images/images/thumb-bg20-T4000.svg?sanitize=true" width="276" /> <img src="https://raw.githubusercontent.com/gywn/segancha/images/images/thumb-bg20-T5000.svg?sanitize=true" width="276" /> <img src="https://raw.githubusercontent.com/gywn/segancha/images/images/thumb-bg20-T6000.svg?sanitize=true" width="276" />
+<p align="center">
+<img src="https://raw.githubusercontent.com/gywn/segancha/images/images/thumb-bg20-T4000.svg?sanitize=true" width="290" /> <img src="https://raw.githubusercontent.com/gywn/segancha/images/images/thumb-bg20-T5000.svg?sanitize=true" width="290" /> <img src="https://raw.githubusercontent.com/gywn/segancha/images/images/thumb-bg20-T6000.svg?sanitize=true" width="290" />
+</p>
 
 ## Installation and Basic Usage
 
@@ -32,22 +36,14 @@ Generate demo page
 
 ```shell
 segancha  # generate ./segancha-default/
-cd ./segancha-default/demo/
+cd segancha-default/demo/
 ```
 
-Generate warm & dark theme extension for VSCode
+Generate warm & dark theme extension for VSCode and install it
 
 ```shell
 segancha --name my-warm-night --temperature 4500 --profile vscode
-rsync -a ./segancha-my-warm-night/vscode/ ~/.vscode/extensions/
-```
-
-Generate theme with reduced saturation for Neovim and VSCode
-
-```shell
-segancha --name my-dumb-theme --maxC 20 --profile vim --profile vscode
-rsync -a ./segancha-my-dumb-theme/vim/ ~/.config/nvim/colors/
-rsync -a ./segancha-my-dumb-theme/vscode/ ~/.vscode/extensions/
+rsync -a segancha-my-warm-night/vscode/ ~/.vscode/extensions/
 ```
 
 ## Command Line Arguments
@@ -88,6 +84,30 @@ rsync -a ./segancha-my-dumb-theme/vscode/ ~/.vscode/extensions/
     All generated profiles will be written into directory `segancha-NAME/` under the current working directory. 
 
     __Default__: `default`
+
+## More Examples
+
+Generate default theme for Vim, Neovim and VSCode
+
+```shell
+segancha --profile vim --profile vscode
+rsync -a segancha-default/vim/ ~/.vim/colors/
+rsync -a segancha-default/vim/ ~/.config/nvim/colors/
+rsync -a segancha-default/vscode/ ~/.vscode/extensions/
+```
+
+Generate theme with reduced saturation
+
+```shell
+segancha --name my-dumb-theme --maxC 20 --profile vscode
+```
+
+Generate the color palette and apply it to your own theme template
+
+```shell
+segancha --profile demo
+pystache my-vim-theme.vim.mustache segancha-default/demo/context.json > my-vim-theme.vim
+```
 
 ## Implementation Details
 TODO
